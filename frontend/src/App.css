@@ -1,0 +1,549 @@
+/* Global Styles */
+:root {
+  --primary-color: #2d5b88;
+  --secondary-color: #e76f51;
+  --accent-color: #2a9d8f;
+  --light-color: #f8f9fa;
+  --dark-color: #264653;
+  --gradient-primary: linear-gradient(135deg, #2d5b88 0%, #3a7bd5 100%);
+  --gradient-secondary: linear-gradient(135deg, #e76f51 0%, #f4a261 100%);
+  --gradient-accent: linear-gradient(135deg, #2a9d8f 0%, #1dd3b0 100%);
+  --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.15);
+  --border-radius: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  color: var(--dark-color);
+}
+
+.App {
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-color);
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.8s ease-in;
+}
+
+.slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.bounce-in {
+  animation: bounceIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% { 
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% { 
+    transform: scale(0.9);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom Card Styles */
+.travel-card {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
+  border: none;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.travel-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-medium);
+}
+
+.travel-card-primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.travel-card-secondary {
+  background: var(--gradient-secondary);
+  color: white;
+}
+
+.travel-card-accent {
+  background: var(--gradient-accent);
+  color: white;
+}
+
+/* Button Styles */
+.btn-travel {
+  background: var(--gradient-primary);
+  border: none;
+  color: white;
+  padding: 12px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-light);
+}
+
+.btn-travel:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+  color: white;
+}
+
+.btn-travel-secondary {
+  background: var(--gradient-secondary);
+}
+
+.btn-travel-accent {
+  background: var(--gradient-accent);
+}
+
+/* Form Styles */
+.travel-form .form-control {
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+  padding: 12px 15px;
+  transition: all 0.3s ease;
+}
+
+.travel-form .form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(45, 91, 136, 0.25);
+}
+
+.travel-form .form-label {
+  font-weight: 600;
+  color: var(--dark-color);
+  margin-bottom: 8px;
+}
+
+/* Badge Styles */
+.travel-badge {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Loading Animation */
+.loading-spinner {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .travel-card {
+    margin-bottom: 1rem;
+  }
+  
+  .btn-travel {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Hero Section Styles */
+.hero-section {
+  background: linear-gradient(135deg, rgba(45, 91, 136, 0.9) 0%, rgba(58, 123, 213, 0.9) 100%),
+              url('https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  pointer-events: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+  animation: float 20s linear infinite;
+}
+
+@keyframes float {
+  0% { transform: translateX(0) translateY(0); }
+  100% { transform: translateX(-100px) translateY(-100px); }
+}
+/* Trip Planner Specific Styles */
+.progress-steps {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #6c757d;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.step-circle.active {
+  background: var(--primary-color);
+  color: white;
+  transform: scale(1.1);
+}
+
+.step-line {
+  flex: 1;
+  height: 4px;
+  background: #e9ecef;
+  margin: 0 -10px;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.step-line.active {
+  background: var(--primary-color);
+}
+
+.step-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.step-label.active {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+/* Interest Cards */
+.interest-card {
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.interest-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-light);
+}
+
+.interest-card.active {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(45, 91, 136, 0.1) 0%, rgba(58, 123, 213, 0.1) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-light);
+}
+
+.interest-card i {
+  transition: all 0.3s ease;
+}
+
+.interest-card.active i {
+  color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+/* Destination Badges */
+.destination-badge {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid #dee2e6;
+}
+
+.destination-badge:hover {
+  background: var(--primary-color) !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-light);
+}
+
+/* Date Picker Customization */
+
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+.react-datepicker-wrapper {
+  width: 100%;
+  
+}
+
+.react-datepicker__input-container input {
+  width: 100%;
+}
+
+/* Loading States */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: var(--border-radius);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .progress-steps {
+    max-width: 300px;
+  }
+  
+  .step-circle {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+  
+  .step-label {
+    font-size: 0.7rem;
+  }
+}
+
+/* Cursor Pointer */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Form Control Larger */
+.form-control-lg {
+  padding: 12px 16px;
+  font-size: 1.1rem;
+}
+/* Dashboard Styles */
+.trip-card {
+  transition: all 0.3s ease;
+}
+
+.trip-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-medium);
+}
+
+.trip-meta .travel-badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+}
+
+/* Trip Details Styles */
+.day-itinerary {
+  border-left: 4px solid var(--primary-color);
+}
+
+.activity-slot {
+  padding: 15px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  height: 100%;
+}
+
+.weather-card {
+  transition: all 0.3s ease;
+}
+
+.weather-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-light);
+}
+
+/* PDF Download Button */
+.pdf-download-btn {
+  background: var(--gradient-accent);
+  border: none;
+  color: white;
+}
+
+.pdf-download-btn:hover {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+/* Dropdown Styles */
+.dropdown-toggle::after {
+  display: none;
+}
+
+.dropdown-menu {
+  border: none;
+  box-shadow: var(--shadow-medium);
+  border-radius: 8px;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+}
+
+.dropdown-item:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .display-5 {
+    font-size: 2rem;
+  }
+  
+  .trip-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .trip-actions .btn {
+    width: 100%;
+  }
+}
+/* Enhanced PDF Download Button */
+.pdf-download-btn {
+  background: linear-gradient(135deg, #2a9d8f 0%, #1dd3b0 100%);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.pdf-download-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2d5b88 0%, #3a7bd5 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+.pdf-download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+/* Cost Breakdown Styles */
+.cost-breakdown {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary-color);
+}
+
+.budget-summary {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.activity-slot {
+  padding: 15px;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e9ecef;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.activity-slot:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(45, 91, 136, 0.1);
+}
+
+/* Cost badges */
+.cost-badge-primary {
+  background: rgba(45, 91, 136, 0.1);
+  color: var(--primary-color)!important;
+  border: 1px solid var(--primary-color);
+}
+
+.cost-badge-warning {
+  background: rgba(231, 111, 81, 0.1);
+  color: var(--secondary-color);
+  border: 1px solid var(--secondary-color);
+}
+
+/* Traveler count indicator */
+.traveler-count {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
