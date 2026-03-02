@@ -436,7 +436,7 @@ For technical support or questions:
 ---
 
 **Project Version:** 1.0  
-**Last Updated:** November 2025  
-**Developer:** AI Travel Assistant Team  
+**Last Updated:** 02 March 2025  
+**Developer:** Teekay Vuyisile Manale 
 
 This documentation provides a comprehensive overview of the AI Travel Assistant project. For specific implementation details, refer to the code comments and inline documentation.
