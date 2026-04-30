@@ -14,7 +14,7 @@ class ItineraryService {
 
     const start = new Date(start_date);
     const end = new Date(end_date);
-    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
 
     const itinerary = [];
     const dailyBudget = total_budget / days;
@@ -60,7 +60,7 @@ class ItineraryService {
   return {
     day: dayNumber,
     date: date.toLocaleDateString(),
-    weather: weather || { description: 'sunny', max_temp: 25 },
+    weather: weather ? { ...weather, is_available: true } : { description: 'Sunny', max_temp: 25, min_temp: 15, is_available: false },
     activities: timeSlots,
     estimated_cost: estimatedCost,
     travelers_count: travelers,
@@ -195,7 +195,7 @@ class ItineraryService {
   }
   generateSummary(itinerary, totalBudget) {
     const totalCost = itinerary.reduce(
-      (sum, day) => sum + day.estimated_cost,
+      (sum, day) => sum + day.estimated_cost.total,
       0
     );
     const daysOverBudget = itinerary.filter(
@@ -224,7 +224,9 @@ class ItineraryService {
     ];
 
     const clothing = [];
-    const avgTemp = weatherData.temperature;
+    const avgTemp = weatherData.forecasts 
+      ? weatherData.forecasts.reduce((sum, f) => sum + f.max_temp, 0) / weatherData.forecasts.length 
+      : (weatherData.temperature || 20);
 
     if (avgTemp > 25) {
       clothing.push("Light clothing", "Sunglasses", "Sunhat", "Sunscreen");

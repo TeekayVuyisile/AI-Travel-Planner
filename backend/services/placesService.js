@@ -48,11 +48,54 @@ class PlacesService {
 
   async searchPlacesByCity(cityName, interests = []) {
     try {
-      // For demo purposes, we'll use mock data based on city and interests
-      return this.getMockPlacesByInterests(cityName, interests);
+      console.log(`🔍 Searching places for city: ${cityName}`);
+      
+      if (!this.apiKey) {
+        throw new Error('OpenTripMap API key is missing');
+      }
+
+      // 1. Get coordinates for the city
+      const geoResponse = await axios.get(`${this.baseURL}/places/geoname`, {
+        params: {
+          name: cityName,
+          apikey: this.apiKey
+        }
+      });
+
+      if (!geoResponse.data || geoResponse.data.status === 'not_found') {
+        console.warn(`City not found: ${cityName}. Falling back to mock data.`);
+        return this.getMockPlacesByInterests(cityName, interests);
+      }
+
+      const { lat, lon } = geoResponse.data;
+      
+      // 2. Map interests to OpenTripMap kinds
+      const kindsMap = {
+        history: 'historic,architecture,museums',
+        nature: 'natural,gardens,parks',
+        food: 'restaurants,cafes,gastronomy',
+        shopping: 'malls,markets',
+        adventure: 'amusement,sport',
+        nightlife: 'bars,clubs',
+        beach: 'beaches',
+        art: 'galleries,theatres'
+      };
+
+      const selectedKinds = interests.length > 0 
+        ? interests.map(i => kindsMap[i]).filter(Boolean).join(',')
+        : 'interesting_places';
+
+      // 3. Get places by location
+      const places = await this.getPlacesByLocation(lat, lon, 10000, selectedKinds);
+      
+      if (places.length === 0) {
+        return this.getMockPlacesByInterests(cityName, interests);
+      }
+
+      return places;
     } catch (error) {
-      console.error('Places search error:', error);
-      return this.getMockPlacesData();
+      console.error('Places search error:', error.message);
+      return this.getMockPlacesByInterests(cityName, interests);
     }
   }
 

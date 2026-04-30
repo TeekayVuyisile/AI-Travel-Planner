@@ -37,10 +37,14 @@ const TripPlanner = () => {
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
-    if (formData.destination_city && formData.start_date) {
-      fetchWeatherData();
-      fetchCurrencyData();
-    }
+    const debounceTimer = setTimeout(() => {
+      if (formData.destination_city && formData.start_date) {
+        fetchWeatherData();
+        fetchCurrencyData();
+      }
+    }, 1000);
+
+    return () => clearTimeout(debounceTimer);
   }, [formData.destination_city, formData.start_date]);
 
   const fetchWeatherData = async () => {

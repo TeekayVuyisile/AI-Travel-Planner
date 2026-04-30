@@ -1,4 +1,5 @@
 import express from 'express';
+import { body, validationResult } from 'express-validator';
 import auth from '../middleware/auth.js';
 import Trip from '../models/Trip.js';
 import Itinerary from '../models/Itinerary.js';
@@ -13,9 +14,31 @@ const router = express.Router();
 // All routes require authentication
 router.use(auth);
 
+// Validation middleware
+const tripValidation = [
+  body('destination_city').notEmpty().trim().withMessage('Destination city is required'),
+  body('destination_country').optional().trim(),
+  body('start_date').isISO8601().withMessage('Valid start date is required'),
+  body('end_date').isISO8601().withMessage('Valid end date is required')
+    .custom((value, { req }) => {
+      if (new Date(value) < new Date(req.body.start_date)) {
+        throw new Error('End date must be after start date');
+      }
+      return true;
+    }),
+  body('total_budget').isFloat({ min: 1 }).withMessage('Total budget must be at least 1'),
+  body('travelers_count').isInt({ min: 1 }).withMessage('Number of travelers must be at least 1'),
+  body('interests').optional().isArray().withMessage('Interests must be an array')
+];
+
 // Create a new trip
-router.post('/', async (req, res) => {
+router.post('/', tripValidation, async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const {
       destination_city,
       destination_country,
@@ -25,11 +48,6 @@ router.post('/', async (req, res) => {
       travelers_count,
       interests
     } = req.body;
-
-    // Validate required fields
-    if (!destination_city || !start_date || !end_date || !total_budget || !travelers_count) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
 
     // Create trip
     const trip = await Trip.create({

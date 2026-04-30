@@ -9,10 +9,6 @@ class WeatherService {
     this.apiKey = process.env.OPENWEATHER_API_KEY;
     this.baseURL = 'https://api.openweathermap.org/data/2.5';
     
-    console.log('Weather Service Initialized:');
-    console.log('   - API Key Present:', !!this.apiKey);
-    console.log('   - API Key Length:', this.apiKey ? this.apiKey.length : 'N/A');
-    
     if (!this.apiKey) {
       console.warn('⚠️  WARNING: OPENWEATHER_API_KEY is missing from environment variables');
     }
@@ -23,7 +19,6 @@ class WeatherService {
       const location = country ? `${city},${country}` : city;
       
       console.log(`🌤️  Fetching weather for: ${location}`);
-      console.log(`   Using API key: ${this.apiKey ? `Present (${this.apiKey.substring(0, 8)}...)` : 'MISSING'}`);
       
       if (!this.apiKey) {
         throw new Error('OpenWeatherMap API key is missing');

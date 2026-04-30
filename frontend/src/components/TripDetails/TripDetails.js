@@ -349,17 +349,26 @@ const TripDetails = () => {
                           </h5>
                           {day.weather && (
                             <div className="mt-2">
-                              <Badge bg="info" className="me-2">
-                                <i
-                                  className={`${getWeatherIcon(
-                                    day.weather.description
-                                  )} me-1`}
-                                ></i>
-                                {day.weather.max_temp}°C
-                              </Badge>
-                              <small className="text-muted">
-                                {day.weather.description}
-                              </small>
+                              {day.weather.is_available ? (
+                                <>
+                                  <Badge bg="info" className="me-2">
+                                    <i
+                                      className={`${getWeatherIcon(
+                                        day.weather.description
+                                      )} me-1`}
+                                    ></i>
+                                    {day.weather.max_temp}°C
+                                  </Badge>
+                                  <small className="text-muted text-capitalize">
+                                    {day.weather.description}
+                                  </small>
+                                </>
+                              ) : (
+                                <Badge bg="light" text="muted">
+                                  <i className="fas fa-clock me-1"></i>
+                                  Weather Not Available
+                                </Badge>
+                              )}
                             </div>
                           )}
                         </Card.Header>
@@ -485,35 +494,46 @@ const TripDetails = () => {
             </span>
           }
         >
-          {latestItinerary?.weather_data ? (
+          {latestItinerary?.itinerary_data?.daily_itinerary ? (
             <Card className="travel-card">
               <Card.Body>
                 <h4 className="mb-4">
                   <i className="fas fa-cloud-sun me-2"></i>
-                  Weather Forecast for {latestItinerary.weather_data.city}
+                  Weather Forecast for {trip.destination_city}
                 </h4>
                 <Row>
-                  {latestItinerary.weather_data.forecasts?.map(
-                    (forecast, index) => (
+                  {latestItinerary.itinerary_data.daily_itinerary.map(
+                    (day, index) => (
                       <Col md={6} lg={4} key={index} className="mb-3">
-                        <Card className="weather-card">
+                        <Card className={`weather-card h-100 ${!day.weather?.is_available ? 'opacity-75' : ''}`}>
                           <Card.Body>
-                            <h6 className="mb-2">{forecast.date}</h6>
-                            <div className="d-flex align-items-center">
-                              <i
-                                className={`${getWeatherIcon(
-                                  forecast.description
-                                )} fa-2x me-3`}
-                              ></i>
-                              <div>
-                                <div className="fw-bold">
-                                  {forecast.max_temp}°C / {forecast.min_temp}°C
-                                </div>
-                                <small className="text-muted">
-                                  {forecast.description}
-                                </small>
-                              </div>
+                            <div className="d-flex justify-content-between align-items-start mb-2">
+                              <h6 className="mb-0">{day.date}</h6>
+                              <Badge bg="secondary">Day {day.day}</Badge>
                             </div>
+                            
+                            {day.weather?.is_available ? (
+                              <div className="d-flex align-items-center">
+                                <i
+                                  className={`${getWeatherIcon(
+                                    day.weather.description
+                                  )} fa-2x me-3`}
+                                ></i>
+                                <div>
+                                  <div className="fw-bold">
+                                    {day.weather.max_temp}°C / {day.weather.min_temp}°C
+                                  </div>
+                                  <small className="text-muted text-capitalize">
+                                    {day.weather.description}
+                                  </small>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-center py-2">
+                                <i className="fas fa-clock text-muted mb-2 fa-lg"></i>
+                                <div className="small text-muted fw-bold">Weather Forecast is Not Available yet</div>
+                              </div>
+                            )}
                           </Card.Body>
                         </Card>
                       </Col>

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import pkg from 'pg';
 const { Pool } = pkg;
 
@@ -6,10 +7,8 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'ai_travel_planner',
   user: process.env.DB_USER || 'postgres',
-  password: "",
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  password: process.env.DB_PASSWORD || '',
+  
 });
 
 // Test database connection
