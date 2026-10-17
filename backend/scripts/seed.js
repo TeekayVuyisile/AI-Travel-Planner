@@ -83,8 +83,8 @@ const seed = async () => {
     for (const [day, slot, time, title, description, category, cost, lat, lng] of CAPE_TOWN_ITEMS) {
       positions[day] = (positions[day] ?? -1) + 1;
       const { rows } = await client.query(
-        `INSERT INTO itinerary_items (trip_id, day, position, slot, start_time, title, description, category, est_cost, lat, lng, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+        `INSERT INTO itinerary_items (trip_id, day, position, slot, start_time, title, description, category, est_cost, lat, lng, created_by, location_verified)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE) RETURNING id`,
         [trip.id, day, positions[day], slot, time, title, description, category, cost, lat, lng, alex.id]
       );
       itemIds.push(rows[0].id);

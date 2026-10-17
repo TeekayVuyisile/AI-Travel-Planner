@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react'
+import { Suspense, lazy, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  LuArrowLeft, LuBackpack, LuBot, LuCalendarDays, LuClock, LuListOrdered, LuMapPin, LuTrash2, LuUsers, LuWallet,
+  LuArrowLeft, LuBackpack, LuBot, LuCalendarDays, LuClock, LuDownload, LuListOrdered, LuMap, LuMapPin, LuTrash2, LuUsers, LuWallet,
 } from 'react-icons/lu'
 import api, { getErrorMessage } from '../lib/api'
 import { cn } from '../lib/cn'
@@ -16,8 +16,12 @@ import ItineraryTab from '../components/trip/ItineraryTab'
 import PackingTab from '../components/trip/PackingTab'
 import AssistantTab from '../components/trip/AssistantTab'
 
+// Leaflet is only downloaded when someone opens the map
+const MapTab = lazy(() => import('../components/trip/MapTab'))
+
 const TABS = [
   { id: 'itinerary', label: 'Itinerary', icon: LuListOrdered, Component: ItineraryTab },
+  { id: 'map', label: 'Map', icon: LuMap, Component: MapTab },
   { id: 'packing', label: 'Packing', icon: LuBackpack, Component: PackingTab },
   { id: 'assistant', label: 'Assistant', icon: LuBot, Component: AssistantTab },
 ]
@@ -30,6 +34,44 @@ const Stat = ({ icon: Icon, label, children }) => (
     <dd className="mt-1.5 text-lg font-semibold tracking-tight text-slate-900">{children}</dd>
   </div>
 )
+
+// Builds the PDF in the browser. react-pdf is large, so it is imported on first use.
+const DownloadPdf = ({ trip }) => {
+  const queryClient = useQueryClient()
+  const [state, setState] = useState('idle')
+
+  const download = async () => {
+    setState('working')
+    try {
+      const [{ pdf }, { default: TripPdf }, items, packing] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('../components/trip/TripPdf'),
+        queryClient.fetchQuery({ queryKey: ['trip', String(trip.id), 'items'], queryFn: () => api.get(`/trips/${trip.id}/items`).then((r) => r.data) }),
+        queryClient.fetchQuery({ queryKey: ['trip', String(trip.id), 'packing'], queryFn: () => api.get(`/trips/${trip.id}/packing`).then((r) => r.data) }),
+      ])
+      const blob = await pdf(<TripPdf trip={trip} items={items} packing={packing} generatedAt={new Date()} />).toBlob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${(trip.title || trip.destination_city).replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-itinerary.pdf`
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setState('idle')
+    } catch (error) {
+      console.error('PDF export failed', error)
+      setState('error')
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {state === 'error' && <span className="text-sm text-rose-700" role="alert">Could not create the PDF</span>}
+      <Button variant="secondary" size="sm" onClick={download} loading={state === 'working'}>
+        {state !== 'working' && <LuDownload className="size-4" aria-hidden />} Download PDF
+      </Button>
+    </div>
+  )
+}
 
 const DeleteTrip = ({ tripId }) => {
   const navigate = useNavigate()
@@ -137,7 +179,10 @@ const TripOverview = () => {
             {trip.destination_city}{trip.destination_country ? `, ${trip.destination_country}` : ''}
           </p>
         </div>
-        {trip.role === 'owner' && <DeleteTrip tripId={trip.id} />}
+        <div className="flex flex-wrap items-center gap-2">
+          <DownloadPdf trip={trip} />
+          {trip.role === 'owner' && <DeleteTrip tripId={trip.id} />}
+        </div>
       </div>
 
       <dl className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -151,7 +196,9 @@ const TripOverview = () => {
         <div className="min-w-0">
           <TabList active={activeTab} onChange={(id) => setSearchParams(id === 'itinerary' ? {} : { tab: id }, { replace: true })} />
           <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="pt-6">
-            <Component trip={trip} />
+            <Suspense fallback={<Spinner className="text-brand-700" />}>
+              <Component trip={trip} />
+            </Suspense>
           </div>
         </div>
 

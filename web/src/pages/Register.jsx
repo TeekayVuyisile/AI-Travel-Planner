@@ -26,7 +26,10 @@ const Register = () => {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const update = (event) => setForm({ ...form, [event.target.name]: event.target.value })
+  const update = (event) => {
+    const { name, value } = event.target
+    setForm((f) => ({ ...f, [name]: value }))
+  }
 
   const submit = async (event) => {
     event.preventDefault()

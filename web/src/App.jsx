@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import AppShell from './components/layout/AppShell'
@@ -5,10 +6,12 @@ import Spinner from './components/ui/Spinner'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import NewTrip from './pages/NewTrip'
-import TripOverview from './pages/TripOverview'
 import NotFound from './pages/NotFound'
+
+// Signed-in pages are split out so the landing page loads without the trip workspace code
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const NewTrip = lazy(() => import('./pages/NewTrip'))
+const TripOverview = lazy(() => import('./pages/TripOverview'))
 
 const FullPageSpinner = () => (
   <div className="flex min-h-dvh items-center justify-center text-brand-700">

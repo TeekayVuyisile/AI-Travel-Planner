@@ -3,16 +3,17 @@ import { body, validationResult } from 'express-validator';
 import auth from '../middleware/auth.js';
 import requireTripRole from '../middleware/tripAccess.js';
 import TripMember from '../models/TripMember.js';
-import ItineraryItem from '../models/ItineraryItem.js';
 import Trip from '../models/Trip.js';
 import Itinerary from '../models/Itinerary.js';
 import planRoutes from './plan.js';
+import itemRoutes from './items.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(auth);
 router.use(planRoutes);
+router.use(itemRoutes);
 
 // Validation middleware
 const tripValidation = [
@@ -21,8 +22,12 @@ const tripValidation = [
   body('start_date').isISO8601().withMessage('Valid start date is required'),
   body('end_date').isISO8601().withMessage('Valid end date is required')
     .custom((value, { req }) => {
-      if (new Date(value) < new Date(req.body.start_date)) {
+      const days = (new Date(value) - new Date(req.body.start_date)) / 86400000;
+      if (days < 0) {
         throw new Error('End date must be after start date');
+      }
+      if (days > 29) {
+        throw new Error('Trips can be at most 30 days long');
       }
       return true;
     }),
@@ -30,7 +35,9 @@ const tripValidation = [
   body('travelers_count').isInt({ min: 1 }).withMessage('Number of travelers must be at least 1'),
   body('interests').optional().isArray().withMessage('Interests must be an array'),
   body('currency').optional().isLength({ min: 3, max: 3 }).isAlpha().toUpperCase(),
-  body('title').optional().trim().isLength({ max: 255 })
+  body('title').optional().trim().isLength({ max: 255 }),
+  body('destination_lat').optional({ values: 'null' }).isFloat({ min: -90, max: 90 }).toFloat(),
+  body('destination_lng').optional({ values: 'null' }).isFloat({ min: -180, max: 180 }).toFloat()
 ];
 
 // Create a new trip
@@ -50,7 +57,9 @@ router.post('/', tripValidation, async (req, res) => {
       travelers_count,
       interests,
       currency,
-      title
+      title,
+      destination_lat,
+      destination_lng
     } = req.body;
 
     // Create trip
@@ -59,6 +68,8 @@ router.post('/', tripValidation, async (req, res) => {
       title,
       destination_city,
       destination_country,
+      destination_lat,
+      destination_lng,
       start_date,
       end_date,
       total_budget,
@@ -102,16 +113,6 @@ router.get('/:tripId', requireTripRole('viewer'), async (req, res) => {
   } catch (error) {
     console.error('Get trip error:', error);
     res.status(500).json({ error: 'Failed to fetch trip' });
-  }
-});
-
-// Get the editable itinerary items for a trip
-router.get('/:tripId/items', requireTripRole('viewer'), async (req, res) => {
-  try {
-    res.json(await ItineraryItem.findByTripId(req.params.tripId, req.user.id));
-  } catch (error) {
-    console.error('Get items error:', error);
-    res.status(500).json({ error: 'Failed to fetch itinerary items' });
   }
 });
 

@@ -8,6 +8,8 @@ class Trip {
       title,
       destination_city,
       destination_country,
+      destination_lat,
+      destination_lng,
       start_date,
       end_date,
       total_budget,
@@ -17,8 +19,8 @@ class Trip {
     } = tripData;
 
     const query = `
-      INSERT INTO trips (user_id, title, destination_city, destination_country, start_date, end_date, total_budget, currency, travelers_count, interests)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, 'ZAR'), $9, $10)
+      INSERT INTO trips (user_id, title, destination_city, destination_country, start_date, end_date, total_budget, currency, travelers_count, interests, destination_lat, destination_lng)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, 'ZAR'), $9, $10, $11, $12)
       RETURNING *
     `;
 
@@ -35,7 +37,9 @@ class Trip {
         total_budget,
         currency,
         travelers_count,
-        JSON.stringify(interests)
+        JSON.stringify(interests),
+        destination_lat ?? null,
+        destination_lng ?? null
       ]);
       const trip = result.rows[0];
       await TripMember.add(trip.id, user_id, 'owner', client);

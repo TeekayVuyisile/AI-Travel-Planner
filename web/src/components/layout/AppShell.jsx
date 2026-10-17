@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { LuChevronsUpDown, LuLayoutDashboard, LuLogOut, LuMapPinned, LuPlus, LuUsers } from 'react-icons/lu'
@@ -7,6 +7,7 @@ import api from '../../lib/api'
 import { cn } from '../../lib/cn'
 import Logo from '../ui/Logo'
 import { Avatar } from '../ui/Avatar'
+import Spinner from '../ui/Spinner'
 
 const navItems = [
   { to: '/dashboard', label: 'My trips', icon: LuLayoutDashboard },
@@ -179,7 +180,9 @@ const AppShell = () => {
       </header>
 
       <main className="min-w-0">
-        <Outlet />
+        <Suspense fallback={<div className="flex justify-center py-24 text-brand-700"><Spinner className="size-8" /></div>}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   )

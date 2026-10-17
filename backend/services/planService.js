@@ -7,16 +7,11 @@ import aiService from './aiService.js';
 import itineraryService from './itineraryService.js';
 import placesService from './placesService.js';
 import weatherService from './weatherService.js';
+import { toISODate, tripDayCount } from '../utils/dates.js';
 
 // The AI plans long trips in chunks so each response stays small and fast
 const DAYS_PER_AI_CALL = 7;
 
-// pg returns DATE columns as local-midnight Date objects
-const toISODate = (value) => {
-  if (typeof value === 'string') return value.slice(0, 10);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
-};
 
 // One entry per trip day, with the forecast attached when the date falls inside the forecast window.
 // Mock forecasts are never attached: the AI must not quote made-up numbers.
@@ -26,10 +21,8 @@ const buildTripDays = (trip, forecast) => {
     : new Map();
 
   const start = new Date(`${toISODate(trip.start_date)}T00:00:00Z`);
-  const end = new Date(`${toISODate(trip.end_date)}T00:00:00Z`);
-  const count = Math.round((end - start) / 86400000) + 1;
 
-  return Array.from({ length: count }, (_, i) => {
+  return Array.from({ length: tripDayCount(trip) }, (_, i) => {
     const date = new Date(start);
     date.setUTCDate(start.getUTCDate() + i);
     const iso = date.toISOString().slice(0, 10);
@@ -47,7 +40,9 @@ const gatherContext = async (trip) => {
     TripMember.findByTripId(trip.id),
     weatherService.getWeatherForecast(trip.destination_city, trip.destination_country),
     placesService.searchPlacesByCity(trip.destination_city, trip.interests || []),
-    placesService.geocodeCity(trip.destination_city, trip.destination_country)
+    trip.destination_lat != null
+      ? { lat: trip.destination_lat, lng: trip.destination_lng }
+      : placesService.geocodeCity(trip.destination_city, trip.destination_country)
   ]);
 
   return {
@@ -104,6 +99,75 @@ const fallbackPacking = (trip, days) => {
       ...toItems([...new Set(legacy.clothing)], 'clothing')
     ]
   };
+};
+
+// Words that identify a place, for matching an activity title against geocoder results.
+// Plurals and centre/center are normalised so "Fine Arts Centre" matches "Fine Art Center".
+const STOP_WORDS = new Set(['the', 'at', 'and', 'of', 'in', 'on', 'to', 'a', 'tour', 'visit', 'walk', 'lunch', 'dinner', 'breakfast', 'brunch', 'drinks', 'trip', 'day', 'guided', 'local', 'with', 'sunset', 'morning', 'evening']);
+const placeWords = (text) => new Set(
+  text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+    .map(w => (w === 'centre' ? 'center' : w.length > 4 && w.endsWith('s') ? w.slice(0, -1) : w))
+);
+const similarity = (a, b) => {
+  const shared = [...a].filter(w => b.has(w)).length;
+  return shared / new Set([...a, ...b]).size;
+};
+
+const distanceKm = (a, b) => {
+  const rad = (deg) => (deg * Math.PI) / 180;
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(h));
+};
+
+// AI coordinates are estimates and can be kilometres off. Look each activity up on OpenStreetMap
+// near the destination; a clear name match replaces the estimate and marks the pin verified.
+// Unmatched items keep the AI estimate, shown on the map as an approximate location.
+const refineCoordinates = async (items, center, cityName) => {
+  if (!center) return items;
+  // Photon throttles bursts; once it reports busy, leave the remaining items as AI estimates
+  let geocoderBusy = false;
+  // The destination's own name says nothing about which place in it is meant
+  const cityWords = placeWords(cityName);
+  const distinctive = (text) => new Set([...placeWords(text)].filter(w => !cityWords.has(w)));
+
+  const lookup = async (item) => {
+    // "Knysna Waterfront - Art & Craft Market" -> the part naming the place
+    const name = item.title.split(/\s[-–—(]\s?|:\s/)[0].trim();
+    const words = name.split(/\s+/);
+    // Photon needs every word to match, so retry with trailing words dropped ("Beach Walk" -> "Beach")
+    const queries = [...new Set([name, words.slice(0, -1).join(' '), words.slice(0, -2).join(' ')])]
+      .filter(q => distinctive(q).size > 0);
+
+    for (const query of queries) {
+      if (geocoderBusy) break;
+      const wanted = distinctive(query);
+      let results;
+      try {
+        results = await placesService.autocomplete(query, { type: 'place', near: center, radiusDeg: 0.35 });
+      } catch {
+        geocoderBusy = true;
+        break;
+      }
+      const best = results
+        .filter(r => distanceKm(center, r) <= 40)
+        .map(r => ({ r, score: similarity(wanted, distinctive(r.name)) }))
+        .sort((a, b) => b.score - a.score)[0];
+      if (best && best.score >= 0.6) {
+        return { ...item, lat: best.r.lat, lng: best.r.lng, location_verified: true };
+      }
+    }
+    return { ...item, location_verified: false };
+  };
+
+  // Two at a time, to stay inside the free geocoder's fair-use limits
+  const refined = [];
+  for (let i = 0; i < items.length; i += 2) {
+    refined.push(...await Promise.all(items.slice(i, i + 2).map(lookup)));
+  }
+  return refined;
 };
 
 const withTransaction = async (work) => {
@@ -163,7 +227,8 @@ class PlanService {
     }
     packing ||= fallbackPacking(trip, days);
 
-    const items = plan.days.flatMap(d => d.items.map(item => ({ ...item, day: d.day })));
+    let items = plan.days.flatMap(d => d.items.map(item => ({ ...item, day: d.day })));
+    if (source === 'ai') items = await refineCoordinates(items, center, trip.destination_city);
     const meta = {
       source,
       model: source === 'ai' ? aiService.planModel : null,
@@ -216,8 +281,9 @@ class PlanService {
       throw new Error('AI returned no activities for the day');
     }
 
+    const items = await refineCoordinates(result.items, center, trip.destination_city);
     await withTransaction(async (client) => {
-      await ItineraryItem.replaceDay(client, trip.id, dayNumber, result.items, userId);
+      await ItineraryItem.replaceDay(client, trip.id, dayNumber, items, userId);
       await Itinerary.setDayTheme(client, trip.id, dayNumber, result.theme);
     });
 
