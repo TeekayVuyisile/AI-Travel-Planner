@@ -48,7 +48,7 @@ class PlacesService {
 
   async searchPlacesByCity(cityName, interests = []) {
     try {
-      console.log(`🔍 Searching places for city: ${cityName}`);
+      console.log(`Searching places for city: ${cityName}`);
       
       if (!this.apiKey) {
         throw new Error('OpenTripMap API key is missing');
