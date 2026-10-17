@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LuMapPin, LuX } from 'react-icons/lu'
 import api, { getErrorMessage } from '../../lib/api'
+import { useToast } from '../../contexts/ToastContext'
 import LocationAutocomplete from '../LocationAutocomplete'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
@@ -9,11 +10,12 @@ import Field from '../ui/Field'
 
 const CATEGORIES = ['history', 'nature', 'food', 'shopping', 'adventure', 'nightlife', 'beach', 'art', 'transport', 'rest']
 
-const selectClass = 'block h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15'
+const selectClass = 'block h-11 w-full rounded-xl border border-slate-300 bg-surface px-3 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15'
 
 // Add (no `item`) or edit an itinerary activity. `near` biases the location search to the destination.
 const ItemForm = ({ trip, day, item, near, onClose }) => {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [form, setForm] = useState({
     title: item?.title ?? '',
     start_time: item?.start_time?.slice(0, 5) ?? '',
@@ -33,6 +35,7 @@ const ItemForm = ({ trip, day, item, near, onClose }) => {
       : api.post(`/trips/${trip.id}/items`, { ...body, day })),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'items'] })
+      toast.success(item ? 'Changes saved' : `Added to day ${day}`)
       onClose()
     },
   })
@@ -60,7 +63,7 @@ const ItemForm = ({ trip, day, item, near, onClose }) => {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-4 rounded-xl border border-brand-200 bg-white p-4 shadow-sm">
+    <form onSubmit={submit} noValidate className="space-y-4 rounded-xl border border-brand-200 bg-surface p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-900">{item ? 'Edit activity' : `Add an activity to day ${day}`}</p>
       {save.isError && <Alert>{getErrorMessage(save.error, 'Could not save the activity')}</Alert>}
 

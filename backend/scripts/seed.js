@@ -4,10 +4,10 @@ import bcrypt from 'bcryptjs';
 import { pool } from '../config/database.js';
 
 const DEMO_USERS = [
-  { email: 'alex@demo.travel', first_name: 'Alex', last_name: 'Mokoena', avatar_color: '#0d9488' },
+  { email: 'alex@demo.travel', first_name: 'Alex', last_name: 'Mokoena', avatar_color: '#0f766e' },
   { email: 'lerato@demo.travel', first_name: 'Lerato', last_name: 'Dlamini', avatar_color: '#e11d48' },
   { email: 'sam@demo.travel', first_name: 'Sam', last_name: 'Patel', avatar_color: '#7c3aed' },
-  { email: 'jordan@demo.travel', first_name: 'Jordan', last_name: 'Smith', avatar_color: '#d97706' }
+  { email: 'jordan@demo.travel', first_name: 'Jordan', last_name: 'Smith', avatar_color: '#b45309' }
 ];
 
 const addDays = (date, days) => {

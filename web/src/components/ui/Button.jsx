@@ -3,12 +3,12 @@ import { cn } from '../../lib/cn'
 import Spinner from './Spinner'
 
 const variants = {
-  primary: 'bg-brand-700 text-white shadow-sm hover:bg-brand-800',
-  secondary: 'bg-white text-slate-900 ring-1 ring-slate-200 shadow-sm hover:bg-slate-50',
+  primary: 'bg-primary text-white shadow-sm hover:bg-primary-hover',
+  secondary: 'bg-surface text-slate-900 ring-1 ring-slate-200 shadow-sm hover:bg-slate-50',
   ghost: 'text-slate-700 hover:bg-slate-100',
-  inverse: 'bg-white text-slate-900 shadow-sm hover:bg-slate-100',
-  'ghost-inverse': 'text-white ring-1 ring-white/25 hover:bg-white/10',
-  danger: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700',
+  inverse: 'bg-surface text-slate-900 shadow-sm hover:bg-slate-100',
+  'ghost-inverse': 'text-white ring-1 ring-surface/25 hover:bg-surface/10',
+  danger: 'bg-danger text-white shadow-sm hover:bg-danger-hover',
 }
 
 const sizes = {

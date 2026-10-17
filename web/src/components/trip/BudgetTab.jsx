@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LuArrowRight, LuCircleAlert, LuCircleCheck, LuLightbulb, LuPlus, LuReceipt, LuSparkles, LuTrash2, LuTriangleAlert } from 'react-icons/lu'
 import { useAuth } from '../../contexts/AuthContext'
 import api, { getErrorMessage } from '../../lib/api'
+import { useToast } from '../../contexts/ToastContext'
 import { cn } from '../../lib/cn'
 import { formatMoney } from '../../lib/format'
 import { expenseCategoryLabel } from '../../lib/trips'
@@ -17,7 +18,7 @@ import ColumnChart from '../charts/ColumnChart'
 import ExpenseForm from './ExpenseForm'
 
 const StatTile = ({ label, value, note, tone }) => (
-  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+  <div className="rounded-2xl border border-slate-200 bg-surface p-4">
     <dt className="text-xs font-medium text-slate-500">{label}</dt>
     <dd className={cn('mt-1 text-xl font-semibold tracking-tight', tone === 'bad' ? 'text-rose-700' : 'text-slate-900')}>{value}</dd>
     {note && <dd className="mt-0.5 text-xs text-slate-500">{note}</dd>}
@@ -37,7 +38,7 @@ const BudgetMeter = ({ summary, money }) => {
   const Icon = meta.icon
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+    <div className="rounded-2xl border border-slate-200 bg-surface p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm text-slate-600">
           <span className="text-2xl font-semibold tracking-tight text-slate-900">{Math.round(ratio * 100)}%</span> of the budget used
@@ -49,6 +50,7 @@ const BudgetMeter = ({ summary, money }) => {
       <div
         className="relative mt-3 h-2.5 rounded-full bg-brand-100"
         role="meter"
+        aria-label="Budget used"
         aria-valuemin={0}
         aria-valuemax={summary.total_budget}
         aria-valuenow={summary.spent}
@@ -74,7 +76,7 @@ const Advice = ({ tripId }) => {
   })
 
   return (
-    <section aria-labelledby="advice-heading" className="rounded-2xl border border-slate-200 bg-white p-5">
+    <section aria-labelledby="advice-heading" className="rounded-2xl border border-slate-200 bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 id="advice-heading" className="flex items-center gap-2 text-sm font-semibold text-slate-900">
           <LuLightbulb className="size-4 text-amber-600" aria-hidden /> Budget advice
@@ -104,7 +106,7 @@ const Advice = ({ tripId }) => {
 }
 
 const SettleUp = ({ summary, money, userId }) => (
-  <section aria-labelledby="settle-heading" className="rounded-2xl border border-slate-200 bg-white p-5">
+  <section aria-labelledby="settle-heading" className="rounded-2xl border border-slate-200 bg-surface p-5">
     <h3 id="settle-heading" className="text-sm font-semibold text-slate-900">Settle up</h3>
     {summary.settlements.length === 0 ? (
       <p className="mt-2 text-sm text-slate-600">Everyone is square.</p>
@@ -150,18 +152,20 @@ const SettleUp = ({ summary, money, userId }) => (
 
 const ExpenseList = ({ trip, expenses, money, userId }) => {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const remove = useMutation({
     mutationFn: (id) => api.delete(`/trips/${trip.id}/expenses/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'expenses'] })
       queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'budget'] })
+      toast.success('Expense deleted')
     },
   })
 
   return (
     <>
       {remove.isError && <Alert>{getErrorMessage(remove.error, 'Could not delete the expense')}</Alert>}
-      <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+      <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-surface">
         {expenses.map((e) => {
           const canDelete = trip.role === 'owner' || e.paid_by === userId || e.created_by === userId
           return (

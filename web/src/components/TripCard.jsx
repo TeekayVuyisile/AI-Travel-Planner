@@ -27,11 +27,11 @@ const TripCard = ({ trip }) => {
   return (
     <Link
       to={`/trips/${trip.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-900/5"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5"
     >
       <div className={`relative h-28 bg-gradient-to-br ${covers[trip.id % covers.length]} p-4`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.25),transparent_60%)]" />
-        <span className="relative inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-800">
+        <span className="relative inline-flex items-center rounded-full bg-surface/90 px-2.5 py-1 text-xs font-semibold text-slate-800">
           {statusLabel(trip)}
         </span>
         <LuMapPin className="absolute bottom-3 right-4 size-12 text-white/25" aria-hidden />

@@ -12,7 +12,7 @@ const compact = (n) => new Intl.NumberFormat('en', { notation: 'compact', maximu
 
 // Columns over time for a single series. Hairline grid at 0, half and max; the tallest column is
 // labelled and every column shows its value on hover or keyboard focus.
-const ColumnChart = ({ data, format, color = 'var(--color-brand-700)', height = 160 }) => {
+const ColumnChart = ({ data, format, color = 'var(--color-chart)', height = 160 }) => {
   const [active, setActive] = useState(null)
   const top = niceMax(Math.max(...data.map((d) => d.value)))
   const peak = data.reduce((best, d) => (d.value > (best?.value ?? -1) ? d : best), null)
@@ -53,7 +53,7 @@ const ColumnChart = ({ data, format, color = 'var(--color-brand-700)', height = 
                   />
                   {(isActive || (!active && d === peak && d.value > 0)) && (
                     <span
-                      className={`pointer-events-none absolute z-10 -translate-y-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] tabular-nums ${isActive ? 'bg-slate-900 font-semibold text-white' : 'text-slate-700'}`}
+                      className={`pointer-events-none absolute z-10 -translate-y-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] tabular-nums ${isActive ? 'bg-slate-900 font-semibold text-slate-50' : 'text-slate-700'}`}
                       style={{ bottom: `${(d.value / top) * 100}%` }}
                       aria-hidden
                     >

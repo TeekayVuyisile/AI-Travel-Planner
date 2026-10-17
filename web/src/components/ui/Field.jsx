@@ -17,7 +17,7 @@ const Field = forwardRef(({ label, error, hint, className, id, ...props }, ref) 
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         className={cn(
-          'block h-11 w-full rounded-xl border bg-white px-3.5 text-base text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15',
+          'block h-11 w-full rounded-xl border bg-surface px-3.5 text-base text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15',
           error ? 'border-rose-400' : 'border-slate-300',
         )}
         {...props}

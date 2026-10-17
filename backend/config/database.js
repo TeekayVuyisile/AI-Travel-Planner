@@ -7,12 +7,20 @@ const { Pool, types } = pkg;
 const DATE_OID = 1082;
 types.setTypeParser(DATE_OID, (value) => value);
 
+// Hosted databases (Neon, Render, Supabase) provide one connection string, usually with
+// ?sslmode=require, which pg applies itself. Locally the separate DB_* variables are used.
+const connection = process.env.DATABASE_URL
+  ? { connectionString: process.env.DATABASE_URL }
+  : {
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME || 'ai_travel_planner',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || ''
+    };
+
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'ai_travel_planner',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
+  ...connection,
   // Let short-lived scripts and tests exit once queries finish; a listening server stays alive anyway
   allowExitOnIdle: true
 });

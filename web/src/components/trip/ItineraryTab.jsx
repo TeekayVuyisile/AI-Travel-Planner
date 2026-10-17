@@ -7,6 +7,7 @@ import {
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { LuLightbulb, LuPlus, LuRefreshCw, LuSparkles, LuWandSparkles } from 'react-icons/lu'
 import api, { getErrorMessage } from '../../lib/api'
+import { useToast } from '../../contexts/ToastContext'
 import { cn } from '../../lib/cn'
 import { tripLength } from '../../lib/format'
 import { dayColor } from '../../lib/trips'
@@ -40,11 +41,13 @@ const GeneratingCard = () => {
 
 const ReplanForm = ({ tripId, day, onClose }) => {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [request, setRequest] = useState('')
   const regenerate = useMutation({
     mutationFn: () => api.post(`/trips/${tripId}/days/${day}/regenerate`, { request: request.trim() || undefined }).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip', String(tripId)] })
+      toast.success(`Day ${day} replanned`)
       onClose()
     },
   })
@@ -64,7 +67,7 @@ const ReplanForm = ({ tripId, day, onClose }) => {
         onChange={(event) => setRequest(event.target.value)}
         maxLength={300}
         placeholder="More relaxed, fewer museums, somewhere for sunset..."
-        className="mt-1.5 block h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15"
+        className="mt-1.5 block h-11 w-full rounded-xl border border-slate-300 bg-surface px-3.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15"
       />
       <p className="mt-1.5 text-xs text-slate-500">Activities the group voted down are replaced too.</p>
       {regenerate.isError && <div className="mt-3"><Alert>{getErrorMessage(regenerate.error, 'Could not replan this day')}</Alert></div>}
@@ -88,7 +91,7 @@ const DaySection = ({ trip, day, itemIds, itemsById, canEdit, near }) => {
   const dateLabel = new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
-    <section aria-labelledby={`day-${day.day}`} className="rounded-2xl border border-slate-200 bg-white p-5">
+    <section aria-labelledby={`day-${day.day}`} className="rounded-2xl border border-slate-200 bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 id={`day-${day.day}`} className="flex items-center gap-2 font-semibold text-slate-900">
@@ -154,6 +157,7 @@ const ItineraryTab = ({ trip }) => {
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const canEdit = trip.role === 'owner' || trip.role === 'editor'
+  const toast = useToast()
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false)
   const [dragColumns, setDragColumns] = useState(null)
   const [activeId, setActiveId] = useState(null)
@@ -167,16 +171,20 @@ const ItineraryTab = ({ trip }) => {
 
   const generate = useMutation({
     mutationFn: () => api.post(`/trips/${trip.id}/generate-itinerary`).then((r) => r.data.plan),
-    onSuccess: () => {
+    onSuccess: (plan) => {
       setConfirmingRegenerate(false)
       queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id)] })
+      toast.success(plan.source === 'ai' ? 'Your itinerary is ready' : 'Basic itinerary ready (the AI is unavailable)')
     },
   })
 
   const reorder = useMutation({
     mutationFn: (days) => api.put(`/trips/${trip.id}/items/order`, { days }).then((r) => r.data),
     onSuccess: (items) => queryClient.setQueryData(itemsKey, items),
-    onError: () => queryClient.invalidateQueries({ queryKey: itemsKey }),
+    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: itemsKey })
+      toast.error(getErrorMessage(error, 'Could not save the new order'))
+    },
   })
 
   const sensors = useSensors(
@@ -321,10 +329,9 @@ const ItineraryTab = ({ trip }) => {
   return (
     <div className="space-y-6">
       {generate.isError && <Alert>{getErrorMessage(generate.error, 'Could not generate the itinerary')}</Alert>}
-      {reorder.isError && <Alert>{getErrorMessage(reorder.error, 'Could not save the new order')}</Alert>}
 
       {plan && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5" aria-label="Plan summary">
+        <section className="rounded-2xl border border-slate-200 bg-surface p-5" aria-label="Plan summary">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <span className={cn(
               'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
@@ -384,7 +391,7 @@ const ItineraryTab = ({ trip }) => {
         ))}
         <DragOverlay>
           {activeId && itemsById.get(activeId) && (
-            <ItemBody item={itemsById.get(activeId)} currency={trip.currency} className="bg-white shadow-xl ring-2 ring-brand-600/30" />
+            <ItemBody item={itemsById.get(activeId)} currency={trip.currency} className="bg-surface shadow-xl ring-2 ring-brand-600/30" />
           )}
         </DragOverlay>
       </DndContext>

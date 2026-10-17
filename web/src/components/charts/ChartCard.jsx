@@ -8,7 +8,7 @@ const ChartCard = ({ title, subtitle, rows, columns, children }) => {
   const id = useId()
 
   return (
-    <section aria-labelledby={id} className="rounded-2xl border border-slate-200 bg-white p-5">
+    <section aria-labelledby={id} className="rounded-2xl border border-slate-200 bg-surface p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 id={id} className="text-sm font-semibold text-slate-900">{title}</h3>

@@ -24,7 +24,7 @@ const DemoButton = ({ onError }) => {
 
   return (
     <>
-      <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-slate-400">
+      <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-slate-500">
         <span className="h-px flex-1 bg-slate-200" /> or <span className="h-px flex-1 bg-slate-200" />
       </div>
       <Button type="button" variant="secondary" className="w-full" onClick={start} loading={loading}>

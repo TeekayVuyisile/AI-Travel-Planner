@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getErrorMessage } from '../lib/api'
+import { usePageTitle } from '../lib/usePageTitle'
 import AuthLayout from '../components/layout/AuthLayout'
 import DemoButton from '../components/DemoButton'
 import Alert from '../components/ui/Alert'
@@ -9,6 +10,7 @@ import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 
 const Login = () => {
+  usePageTitle('Sign in')
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

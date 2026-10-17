@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { LuPlane, LuPlus, LuRefreshCw } from 'react-icons/lu'
 import { useAuth } from '../contexts/AuthContext'
 import api, { getErrorMessage } from '../lib/api'
+import { usePageTitle } from '../lib/usePageTitle'
 import { daysUntil } from '../lib/format'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
@@ -11,7 +12,7 @@ import TripCard from '../components/TripCard'
 import { InviteInbox, WeatherAlerts } from '../components/DashboardNotices'
 
 const CardSkeleton = () => (
-  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-surface">
     <div className="h-28 animate-pulse bg-slate-200" />
     <div className="space-y-3 p-5">
       <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
@@ -31,6 +32,7 @@ const TripGrid = ({ title, trips }) => (
 )
 
 const Dashboard = () => {
+  usePageTitle('Your trips')
   const { user } = useAuth()
   const { data: trips, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['trips'],

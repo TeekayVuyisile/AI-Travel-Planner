@@ -22,10 +22,10 @@ const Message = ({ message, isMine }) => {
   if (message.role === 'assistant') {
     return (
       <li className="flex gap-3">
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-slate-50">
           <LuBot className="size-4" aria-hidden />
         </span>
-        <div className="min-w-0 max-w-[42rem] rounded-2xl rounded-tl-md bg-white px-4 py-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200">
+        <div className="min-w-0 max-w-[42rem] rounded-2xl rounded-tl-md bg-surface px-4 py-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200">
           <p className="sr-only">Assistant:</p>
           {message.content ? <Markdown>{message.content}</Markdown> : <Spinner className="size-4 text-slate-400" />}
         </div>
@@ -40,7 +40,7 @@ const Message = ({ message, isMine }) => {
         {!isMine && <p className="mb-1 text-xs font-medium text-slate-500">{message.first_name}</p>}
         <p className={cn(
           'inline-block whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-left text-[15px] leading-relaxed',
-          isMine ? 'rounded-tr-md bg-brand-700 text-white' : 'rounded-tl-md bg-slate-200 text-slate-900',
+          isMine ? 'rounded-tr-md bg-primary text-white' : 'rounded-tl-md bg-slate-200 text-slate-900',
         )}>
           {message.content}
         </p>
@@ -113,7 +113,7 @@ const AssistantTab = ({ trip }) => {
       <div className="max-h-[60vh] min-h-72 overflow-y-auto p-4 sm:p-6" aria-live="polite">
         {messages.length === 0 && !streaming ? (
           <div className="py-6 text-center">
-            <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-slate-900 text-white">
+            <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-slate-900 text-slate-50">
               <LuBot className="size-6" aria-hidden />
             </span>
             <h3 className="mt-4 font-semibold text-slate-900">Ask anything about this trip</h3>
@@ -135,7 +135,7 @@ const AssistantTab = ({ trip }) => {
         <div ref={listEndRef} />
       </div>
 
-      <div className="border-t border-slate-200 bg-white p-3 sm:p-4">
+      <div className="border-t border-slate-200 bg-surface p-3 sm:p-4">
         {error && <div className="mb-3"><Alert>{error}</Alert></div>}
         {messages.length === 0 && !streaming && (
           <div className="mb-3 flex flex-wrap gap-2">
@@ -175,7 +175,7 @@ const AssistantTab = ({ trip }) => {
             type="submit"
             disabled={!draft.trim() || Boolean(streaming)}
             aria-label="Send message"
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-700 text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
           >
             {streaming ? <Spinner className="size-4" /> : <LuArrowUp className="size-5" aria-hidden />}
           </button>

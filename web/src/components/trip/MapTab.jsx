@@ -7,7 +7,8 @@ import { LuMapPinOff, LuMap } from 'react-icons/lu'
 import api, { getErrorMessage } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import { formatMoney, tripLength } from '../../lib/format'
-import { dayColor } from '../../lib/trips'
+import { DAY_COLOR_COUNT, dayColor, dayInk } from '../../lib/trips'
+import { useTheme } from '../../lib/theme'
 import Alert from '../ui/Alert'
 import EmptyState from '../ui/EmptyState'
 import Spinner from '../ui/Spinner'
@@ -21,9 +22,9 @@ const pinIcon = (day, number, active, verified) => L.divIcon({
   iconAnchor: [15, 15],
   popupAnchor: [0, -16],
   html: `<span style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9999px;
-    background:${verified ? dayColor(day) : '#fff'};color:${verified ? '#fff' : dayColor(day)};
+    background:${verified ? dayColor(day) : 'var(--color-surface)'};color:${verified ? dayInk(day) : 'var(--color-slate-900)'};
     font:600 12px/1 'Plus Jakarta Sans',sans-serif;
-    border:2px ${verified ? 'solid #fff' : `dashed ${dayColor(day)}`};box-shadow:0 2px 6px rgba(15,23,42,.35);
+    border:2px ${verified ? 'solid var(--color-surface)' : `dashed ${dayColor(day)}`};box-shadow:0 2px 6px rgba(15,23,42,.35);
     ${active ? 'transform:scale(1.25);' : ''}">${number}</span>`,
 })
 
@@ -49,7 +50,14 @@ const FocusItem = ({ item, markerRefs }) => {
   return null
 }
 
+// Leaflet draws routes as SVG attributes, which cannot use CSS variables, so resolve the colour
+const resolveColor = (value) => {
+  const name = value.match(/var\((--[\w-]+)\)/)?.[1]
+  return name ? getComputedStyle(document.documentElement).getPropertyValue(name).trim() : value
+}
+
 const MapTab = ({ trip }) => {
+  useTheme() // re-render on theme change so resolved route colours follow it
   const [dayFilter, setDayFilter] = useState('all')
   const [focused, setFocused] = useState(null)
   const markerRefs = useRef(new Map())
@@ -101,7 +109,7 @@ const MapTab = ({ trip }) => {
             onClick={() => { setDayFilter(day); setFocused(null) }}
             className={cn(
               'inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm font-medium transition-colors',
-              dayFilter === day ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 hover:border-slate-400',
+              dayFilter === day ? 'border-slate-900 bg-slate-900 text-slate-50' : 'border-slate-300 text-slate-700 hover:border-slate-400',
             )}
           >
             {day !== 'all' && <span className="size-2.5 rounded-full" style={{ backgroundColor: dayColor(day) }} aria-hidden />}
@@ -109,6 +117,10 @@ const MapTab = ({ trip }) => {
           </button>
         ))}
       </div>
+
+      {dayCount > DAY_COLOR_COUNT && dayFilter === 'all' && (
+        <p className="text-sm text-slate-600">Days {DAY_COLOR_COUNT + 1} to {dayCount} share the grey pins. Pick a day above to see it on its own.</p>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-[1fr_16rem]">
         <div className="relative isolate h-[28rem] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[34rem]">
@@ -118,7 +130,7 @@ const MapTab = ({ trip }) => {
               url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {routes.map(([day, points]) => (
-              <Polyline key={day} positions={points} pathOptions={{ color: dayColor(day), weight: 3, opacity: 0.7, dashArray: '6 8' }} />
+              <Polyline key={day} positions={points} pathOptions={{ color: resolveColor(dayColor(day)), weight: 3, opacity: 0.7, dashArray: '6 8' }} />
             ))}
             {pinned.map((item) => (
               <Marker
@@ -158,9 +170,9 @@ const MapTab = ({ trip }) => {
                   <span
                     className={cn(
                       'inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
-                      item.location_verified ? 'text-white' : 'border-2 border-dashed bg-white',
+                      item.location_verified ? '' : 'border-2 border-dashed bg-surface text-slate-900',
                     )}
-                    style={item.location_verified ? { backgroundColor: dayColor(item.day) } : { borderColor: dayColor(item.day), color: dayColor(item.day) }}
+                    style={item.location_verified ? { backgroundColor: dayColor(item.day), color: dayInk(item.day) } : { borderColor: dayColor(item.day) }}
                     aria-label={`Day ${item.day}, stop ${numbers.get(item.id)}`}
                   >
                     {numbers.get(item.id)}

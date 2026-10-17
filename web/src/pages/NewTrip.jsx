@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LuArrowLeft, LuArrowRight, LuCheck, LuCloudSun, LuMapPin, LuPencil, LuSparkles, LuWallet } from 'react-icons/lu'
 import api, { getErrorMessage } from '../lib/api'
+import { usePageTitle } from '../lib/usePageTitle'
 import { cn } from '../lib/cn'
 import { formatDateRange, formatMoney, tripLength } from '../lib/format'
 import { INTERESTS, describePlace } from '../lib/trips'
@@ -48,7 +49,7 @@ const Stepper = ({ step }) => (
       <li key={label} className="flex flex-1 items-center gap-2" aria-current={index === step ? 'step' : undefined}>
         <span className={cn(
           'inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
-          index < step ? 'bg-brand-700 text-white' : index === step ? 'bg-brand-50 text-brand-800 ring-2 ring-brand-700' : 'bg-slate-100 text-slate-500',
+          index < step ? 'bg-primary text-white' : index === step ? 'bg-brand-50 text-brand-800 ring-2 ring-brand-700' : 'bg-slate-100 text-slate-500',
         )}>
           {index < step ? <LuCheck className="size-4" aria-hidden /> : index + 1}
         </span>
@@ -84,7 +85,7 @@ const Preview = ({ form }) => {
 
   return (
     <aside className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="rounded-2xl border border-slate-200 bg-surface p-5">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
           <LuCloudSun className="size-4" aria-hidden /> Right now in {place?.name}
         </p>
@@ -98,7 +99,7 @@ const Preview = ({ form }) => {
         <p className="mt-2 text-xs text-slate-500">Day-by-day forecasts are added to the plan when your dates are within 5 days.</p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="rounded-2xl border border-slate-200 bg-surface p-5">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
           <LuWallet className="size-4" aria-hidden /> Budget
         </p>
@@ -119,6 +120,7 @@ const Preview = ({ form }) => {
 }
 
 const NewTrip = () => {
+  usePageTitle('Plan a trip')
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [step, setStep] = useState(0)
@@ -184,7 +186,7 @@ const NewTrip = () => {
         onSubmit={(event) => { event.preventDefault(); if (step < STEPS.length - 1) next(); else submit() }}
         className={cn('mt-8 grid gap-6', step === 1 && 'lg:grid-cols-[1fr_18rem]')}
       >
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
+        <div className="rounded-2xl border border-slate-200 bg-surface p-5 sm:p-8">
           <h2 className="text-lg font-semibold tracking-tight text-slate-900">{STEPS[step]}</h2>
 
           {step === 0 && (
@@ -229,7 +231,7 @@ const NewTrip = () => {
                     name="currency"
                     value={form.currency}
                     onChange={update}
-                    className="block h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15"
+                    className="block h-11 w-full rounded-xl border border-slate-300 bg-surface px-3 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15"
                   >
                     {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
