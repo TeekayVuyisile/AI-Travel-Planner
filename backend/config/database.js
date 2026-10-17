@@ -13,12 +13,13 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'ai_travel_planner',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || '',
-  
+  // Let short-lived scripts and tests exit once queries finish; a listening server stays alive anyway
+  allowExitOnIdle: true
 });
 
 // Test database connection
 pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database');
+  if (process.env.NODE_ENV !== 'test') console.log('Connected to PostgreSQL database');
 });
 
 pool.on('error', (err) => {

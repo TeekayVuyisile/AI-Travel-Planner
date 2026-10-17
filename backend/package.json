@@ -8,7 +8,8 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "test": "node --test --test-concurrency=1 --import ./tests/setup.js \"tests/**/*.test.js\""
   },
   "dependencies": {
     "axios": "^1.5.0",
@@ -26,6 +27,7 @@
     "rate-limiter-flexible": "^8.2.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "supertest": "^7.3.1"
   }
 }
