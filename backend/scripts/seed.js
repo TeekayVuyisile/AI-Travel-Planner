@@ -90,6 +90,32 @@ const seed = async () => {
       itemIds.push(rows[0].id);
     }
 
+    // Plan metadata (summary, tips, day themes) like a generated plan, labelled as sample data
+    const days = [0, 1, 2, 3].map(i => {
+      const date = addDays(start, i);
+      return {
+        day: i + 1,
+        date,
+        weekday: new Date(`${date}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' }),
+        weather: null
+      };
+    });
+    await client.query(
+      `INSERT INTO saved_itineraries (trip_id, itinerary_data, weather_data) VALUES ($1, $2, $3)`,
+      [trip.id, JSON.stringify({
+        source: 'sample',
+        model: null,
+        summary: "Four days mixing Cape Town's mountain and coastline with its food, history and art, with the long Cape Point drive on day 2.",
+        tips: [
+          'Book the cableway online for an early slot; it closes when the wind picks up.',
+          "Hire a car for day 2. Cape Point and Simon's Town are hard to reach by public transport.",
+          'Tipping 10 to 15 percent is standard in restaurants.'
+        ],
+        day_themes: { 1: 'Mountain and waterfront', 2: 'Cape Peninsula road trip', 3: 'History and art in the city', 4: 'Gardens and wine' },
+        generated_at: new Date().toISOString()
+      }), JSON.stringify({ days })]
+    );
+
     // A few votes so the group features have something to show
     const votes = [[0, alex, 1], [0, lerato, 1], [0, sam, 1], [3, lerato, 1], [8, sam, -1], [8, lerato, 1], [10, alex, 1]];
     for (const [index, user, vote] of votes) {

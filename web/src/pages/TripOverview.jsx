@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  LuArrowLeft, LuCalendarDays, LuClock, LuMapPin, LuSparkles, LuThumbsDown, LuThumbsUp, LuTrash2, LuUsers, LuWallet,
+  LuArrowLeft, LuBackpack, LuBot, LuCalendarDays, LuClock, LuListOrdered, LuMapPin, LuTrash2, LuUsers, LuWallet,
 } from 'react-icons/lu'
 import api, { getErrorMessage } from '../lib/api'
 import { cn } from '../lib/cn'
@@ -11,8 +11,16 @@ import { INTERESTS, ROLE_LABELS, statusLabel } from '../lib/trips'
 import { Avatar } from '../components/ui/Avatar'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
-import EmptyState from '../components/ui/EmptyState'
 import Spinner from '../components/ui/Spinner'
+import ItineraryTab from '../components/trip/ItineraryTab'
+import PackingTab from '../components/trip/PackingTab'
+import AssistantTab from '../components/trip/AssistantTab'
+
+const TABS = [
+  { id: 'itinerary', label: 'Itinerary', icon: LuListOrdered, Component: ItineraryTab },
+  { id: 'packing', label: 'Packing', icon: LuBackpack, Component: PackingTab },
+  { id: 'assistant', label: 'Assistant', icon: LuBot, Component: AssistantTab },
+]
 
 const Stat = ({ icon: Icon, label, children }) => (
   <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -22,57 +30,6 @@ const Stat = ({ icon: Icon, label, children }) => (
     <dd className="mt-1.5 text-lg font-semibold tracking-tight text-slate-900">{children}</dd>
   </div>
 )
-
-const Score = ({ score }) => {
-  if (!score) return null
-  const positive = score > 0
-  const Icon = positive ? LuThumbsUp : LuThumbsDown
-  return (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold',
-        positive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700',
-      )}
-      aria-label={`Vote score ${score}`}
-    >
-      <Icon className="size-3" aria-hidden /> {Math.abs(score)}
-    </span>
-  )
-}
-
-const Itinerary = ({ items }) => {
-  const days = Object.entries(Object.groupBy(items, (item) => item.day))
-  return (
-    <div className="space-y-6">
-      {days.map(([day, dayItems]) => (
-        <section key={day} aria-label={`Day ${day}`} className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-slate-900">Day {day}</h3>
-          <ol className="mt-4 space-y-3">
-            {dayItems.map((item) => (
-              <li key={item.id} className="flex gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                <span className="flex w-14 shrink-0 items-start gap-1 pt-0.5 text-xs font-semibold tabular-nums text-slate-500">
-                  <LuClock className="mt-px size-3.5" aria-hidden />
-                  {item.start_time?.slice(0, 5) ?? item.slot}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-semibold text-slate-900">{item.title}</p>
-                    <Score score={item.score} />
-                  </div>
-                  {item.description && <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.description}</p>}
-                  <p className="mt-2 text-xs text-slate-500">
-                    <span className="capitalize">{item.category}</span>
-                    {Number(item.est_cost) > 0 && <> &middot; about {formatMoney(item.est_cost)} per person</>}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ))}
-    </div>
-  )
-}
 
 const DeleteTrip = ({ tripId }) => {
   const navigate = useNavigate()
@@ -102,16 +59,51 @@ const DeleteTrip = ({ tripId }) => {
   )
 }
 
+// WAI-ARIA tabs: arrow keys move between tabs, the selected tab is kept in the URL
+const TabList = ({ active, onChange }) => {
+  const refs = useRef([])
+  const onKeyDown = (event, index) => {
+    const delta = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
+    if (!delta) return
+    const next = (index + delta + TABS.length) % TABS.length
+    refs.current[next]?.focus()
+    onChange(TABS[next].id)
+  }
+
+  return (
+    <div role="tablist" aria-label="Trip sections" className="flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-slate-200)]">
+      {TABS.map(({ id, label, icon: Icon }, index) => (
+        <button
+          key={id}
+          ref={(el) => { refs.current[index] = el }}
+          id={`tab-${id}`}
+          role="tab"
+          type="button"
+          aria-selected={active === id}
+          aria-controls={`panel-${id}`}
+          tabIndex={active === id ? 0 : -1}
+          onClick={() => onChange(id)}
+          onKeyDown={(event) => onKeyDown(event, index)}
+          className={cn(
+            'inline-flex h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-semibold transition-colors',
+            active === id ? 'border-brand-700 text-brand-800' : 'border-transparent text-slate-500 hover:text-slate-900',
+          )}
+        >
+          <Icon className="size-4" aria-hidden /> {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 const TripOverview = () => {
   const { tripId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = TABS.some((t) => t.id === searchParams.get('tab')) ? searchParams.get('tab') : 'itinerary'
+
   const tripQuery = useQuery({
     queryKey: ['trip', tripId],
     queryFn: () => api.get(`/trips/${tripId}`).then((r) => r.data),
-  })
-  const itemsQuery = useQuery({
-    queryKey: ['trip', tripId, 'items'],
-    queryFn: () => api.get(`/trips/${tripId}/items`).then((r) => r.data),
-    enabled: tripQuery.isSuccess,
   })
 
   if (tripQuery.isLoading) {
@@ -128,6 +120,7 @@ const TripOverview = () => {
 
   const trip = tripQuery.data
   const interests = (trip.interests ?? []).map((id) => INTERESTS.find((i) => i.id === id)?.label ?? id)
+  const { Component } = TABS.find((t) => t.id === activeTab)
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
@@ -154,20 +147,13 @@ const TripOverview = () => {
         <Stat icon={LuUsers} label="Travellers">{trip.travelers_count}</Stat>
       </dl>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_20rem]">
-        <section aria-labelledby="itinerary-heading">
-          <h2 id="itinerary-heading" className="text-lg font-semibold tracking-tight text-slate-900">Itinerary</h2>
-          <div className="mt-4">
-            {itemsQuery.isLoading && <Spinner className="text-brand-700" />}
-            {itemsQuery.isError && <Alert>{getErrorMessage(itemsQuery.error, 'Could not load the itinerary')}</Alert>}
-            {itemsQuery.data?.length === 0 && (
-              <EmptyState icon={LuSparkles} title="No itinerary yet">
-                AI itinerary generation is part of the next update. The plan will appear here day by day.
-              </EmptyState>
-            )}
-            {itemsQuery.data?.length > 0 && <Itinerary items={itemsQuery.data} />}
+      <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="min-w-0">
+          <TabList active={activeTab} onChange={(id) => setSearchParams(id === 'itinerary' ? {} : { tab: id }, { replace: true })} />
+          <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="pt-6">
+            <Component trip={trip} />
           </div>
-        </section>
+        </div>
 
         <aside className="space-y-6">
           <section aria-labelledby="group-heading" className="rounded-2xl border border-slate-200 bg-white p-5">

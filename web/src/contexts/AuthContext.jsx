@@ -19,10 +19,25 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!localStorage.getItem(TOKEN_KEY)) return
-    api.get('/auth/me')
-      .then((response) => setUser(response.data.user))
-      .catch(() => localStorage.removeItem(TOKEN_KEY))
-      .finally(() => setLoading(false))
+
+    // Only a rejected token signs the user out; network errors and restarts are retried
+    const restoreSession = async () => {
+      for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+          const response = await api.get('/auth/me')
+          setUser(response.data.user)
+          return
+        } catch (error) {
+          const status = error.response?.status
+          if (status === 401 || status === 404) {
+            localStorage.removeItem(TOKEN_KEY)
+            return
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt))
+        }
+      }
+    }
+    restoreSession().finally(() => setLoading(false))
   }, [])
 
   const startSession = useCallback(({ token, user: nextUser }) => {

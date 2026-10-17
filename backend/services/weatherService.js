@@ -100,7 +100,8 @@ class WeatherService {
     // Group by date (OpenWeather returns 3-hour intervals)
     const forecastsByDate = {};
     data.list.forEach(item => {
-      const date = new Date(item.dt * 1000).toLocaleDateString();
+      // Group by the destination's local date (city.timezone is the UTC offset in seconds)
+      const date = new Date((item.dt + (data.city.timezone || 0)) * 1000).toISOString().slice(0, 10);
       if (!forecastsByDate[date]) {
         forecastsByDate[date] = [];
       }
@@ -119,7 +120,9 @@ class WeatherService {
         max_temp: Math.round(Math.max(...temps)),
         description: weather.description,
         icon: weather.icon,
-        humidity: dayForecasts[0].main.humidity
+        humidity: dayForecasts[0].main.humidity,
+        max_wind_kmh: Math.round(Math.max(...dayForecasts.map(f => f.wind.speed)) * 3.6),
+        rain_chance: Math.round(Math.max(...dayForecasts.map(f => f.pop ?? 0)) * 100)
       });
     });
 
@@ -167,12 +170,14 @@ class WeatherService {
       date.setDate(date.getDate() + i);
       
       forecasts.push({
-        date: date.toLocaleDateString(),
+        date: date.toISOString().slice(0, 10),
         min_temp: baseTemp + i - 3,
         max_temp: baseTemp + i + 3,
         description: i % 2 === 0 ? 'sunny' : 'partly cloudy',
         icon: i % 2 === 0 ? '01d' : '02d',
-        humidity: 60 + (i * 5)
+        humidity: 60 + (i * 5),
+        max_wind_kmh: 15,
+        rain_chance: 10
       });
     }
     
