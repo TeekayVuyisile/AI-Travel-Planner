@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const geocodeCache = new Map();
+const autocompleteCache = new Map();
 
 class PlacesService {
   constructor() {
@@ -66,6 +67,56 @@ class PlacesService {
     } catch (error) {
       console.error('Geocoding error:', error.message);
       return null;
+    }
+  }
+
+  // Search-as-you-type through Photon (komoot's OpenStreetMap geocoder, built for autocomplete).
+  // Throws when Photon is unreachable or throttling (it answers 503 when busy), so callers can tell
+  // "no matches" apart from "search unavailable".
+  // type 'city' returns towns and cities; type 'place' returns any POI, biased towards `near`.
+  // `radiusDeg` restricts results to a box around `near` (Photon's location bias alone is weak).
+  async autocomplete(query, { type = 'city', near = null, radiusDeg = null } = {}) {
+    const key = `${type}|${query.toLowerCase()}|${near ? `${near.lat.toFixed(2)},${near.lng.toFixed(2)}` : ''}|${radiusDeg ?? ''}`;
+    if (autocompleteCache.has(key)) return autocompleteCache.get(key);
+
+    const params = new URLSearchParams({ q: query, limit: '6', lang: 'en' });
+    // Filtering on place type finds towns like Knysna that Photon's "city" layer misses
+    if (type === 'city') ['city', 'town', 'village'].forEach(kind => params.append('osm_tag', `place:${kind}`));
+    if (near) {
+      params.set('lat', near.lat);
+      params.set('lon', near.lng);
+      if (radiusDeg) {
+        params.set('bbox', [near.lng - radiusDeg, near.lat - radiusDeg, near.lng + radiusDeg, near.lat + radiusDeg].join(','));
+      }
+    }
+
+    try {
+      const response = await axios.get(`https://photon.komoot.io/api/?${params}`, {
+        headers: { 'User-Agent': 'ai-travel-assistant/1.0 (portfolio project)' },
+        timeout: 6000
+      });
+      const results = response.data.features.map(({ properties: p, geometry }) => ({
+        name: p.name,
+        // For a town, Photon's `city` is often the surrounding municipality (Knysna -> George)
+        city: type === 'city' ? p.name : p.city || null,
+        region: p.state || null,
+        country: p.country || null,
+        country_code: p.countrycode || null,
+        kind: p.osm_value || null,
+        lat: geometry.coordinates[1],
+        lng: geometry.coordinates[0]
+      })).filter(r => r.name);
+
+      // Same place can come back once per OSM object (node and relation); keep the first
+      const unique = [...new Map(results.map(r => [`${r.name}|${r.region}|${r.country}`, r])).values()];
+      if (autocompleteCache.size > 500) autocompleteCache.clear();
+      autocompleteCache.set(key, unique);
+      return unique;
+    } catch (error) {
+      console.error('Autocomplete error:', error.message);
+      const unavailable = new Error('Place search is unavailable');
+      unavailable.status = 503;
+      throw unavailable;
     }
   }
 

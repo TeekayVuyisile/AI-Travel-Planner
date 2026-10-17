@@ -55,71 +55,49 @@ cd ai-travel-assistant
 ```
 
 ### 2. Database Setup
-1. Create a new PostgreSQL database named `ai_travel_planner`.
-2. Run the provided SQL script to set up the tables:
-```bash
-psql -U your_username -d ai_travel_planner -f backend/database_structure.sql
-```
+Create an empty PostgreSQL database named `ai_travel_planner`. The tables are created by the migrations in the next step.
 
-### 3. Backend Configuration
-1. Navigate to the backend folder:
+### 3. Backend
 ```bash
 cd backend
 npm install
+cp .env.example .env   # then fill in database credentials and API keys
+npm run migrate        # create or update the tables
+npm run seed           # optional: demo travellers and a sample group trip
+npm run dev            # API on http://localhost:5000
 ```
-2. Create a `.env` file based on `.env.example`:
-```bash
-cp .env.example .env
-```
-3. Fill in your database credentials and API keys in the `.env` file.
+`GROQ_API_KEY` enables the AI planner and trip assistant. Without it the app falls back to a rule-based planner.
 
-### 4. Frontend Configuration
-1. Navigate to the frontend folder:
+### 4. Web App
 ```bash
-cd ../frontend
+cd web
 npm install
-```
-2. Create a `.env` file based on `.env.example`:
-```bash
-cp .env.example .env
-```
-
-### 5. Running the Application
-**Start Backend:**
-```bash
-# Inside /backend
-npm run dev
-```
-
-**Start Frontend:**
-```bash
-# Inside /frontend
-npm start
+npm run dev            # http://localhost:5173, with /api proxied to the backend
 ```
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 ai-travel-assistant/
 ├── backend/
-│   ├── config/         # Database & environment config
-│   ├── middleware/     # Auth & validation middleware
-│   ├── models/         # Database models (PostgreSQL)
+│   ├── config/         # Database connection
+│   ├── middleware/     # Auth, trip roles, AI rate limits
+│   ├── migrations/     # Numbered SQL migrations (npm run migrate)
+│   ├── models/         # SQL models
 │   ├── routes/         # API endpoints
-│   ├── services/       # Business logic & external API integrations
-│   └── database_structure.sql # DB Schema
-├── frontend/
-│   ├── public/         # Static assets
-│   └── src/
-│       ├── components/ # React components
-│       ├── contexts/   # Auth state management
-│       └── App.js      # Main application routing
-└── (root files)
+│   ├── scripts/        # migrate and seed
+│   └── services/       # AI planning, weather, places, currency
+└── web/
+    └── src/
+        ├── components/ # UI, layout and trip workspace components
+        ├── contexts/   # Auth state
+        ├── lib/        # API client and helpers
+        └── pages/      # Routes
 ```
 
-## 🔒 Security Features
+## Security Features
 - **Environment Variables:** All sensitive keys and credentials are kept out of source control.
 - **Input Validation:** Robust server-side validation using `express-validator` to prevent malformed data.
 - **CORS & Helmet:** Protected against common web vulnerabilities.

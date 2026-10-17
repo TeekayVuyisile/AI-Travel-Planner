@@ -1,13 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { LuClock, LuLightbulb, LuMapPin, LuRefreshCw, LuSparkles, LuThumbsDown, LuThumbsUp, LuWandSparkles } from 'react-icons/lu'
+import {
+  DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCorners, useDroppable, useSensor, useSensors,
+} from '@dnd-kit/core'
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { LuLightbulb, LuPlus, LuRefreshCw, LuSparkles, LuWandSparkles } from 'react-icons/lu'
 import api, { getErrorMessage } from '../../lib/api'
 import { cn } from '../../lib/cn'
-import { formatMoney } from '../../lib/format'
+import { tripLength } from '../../lib/format'
+import { dayColor } from '../../lib/trips'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
 import Spinner from '../ui/Spinner'
+import ItemCard, { ItemBody } from './ItemCard'
+import ItemForm from './ItemForm'
 import WeatherBadge from './WeatherBadge'
 
 const PROGRESS_STEPS = ['Checking the forecast', 'Picking places that match your interests', 'Balancing the budget', 'Writing the packing list']
@@ -27,23 +35,6 @@ const GeneratingCard = () => {
         <p className="text-sm text-brand-800">{PROGRESS_STEPS[step]}...</p>
       </div>
     </div>
-  )
-}
-
-const Score = ({ score }) => {
-  if (!score) return null
-  const positive = score > 0
-  const Icon = positive ? LuThumbsUp : LuThumbsDown
-  return (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold',
-        positive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700',
-      )}
-      aria-label={`Vote score ${score}`}
-    >
-      <Icon className="size-3" aria-hidden /> {Math.abs(score)}
-    </span>
   )
 }
 
@@ -87,21 +78,24 @@ const ReplanForm = ({ tripId, day, onClose }) => {
   )
 }
 
-const DaySection = ({ trip, day, items, canEdit }) => {
+const DaySection = ({ trip, day, itemIds, itemsById, canEdit, near }) => {
   const [replanning, setReplanning] = useState(false)
+  const [adding, setAdding] = useState(false)
+  // Lets an item be dropped onto a day that has no activities yet. Only active while the day is
+  // empty: otherwise the list itself would win collisions over the activities inside it.
+  const { setNodeRef, isOver } = useDroppable({ id: `day-${day.day}`, disabled: !canEdit || itemIds.length > 0 })
   const theme = trip.plan?.day_themes?.[day.day]
-  const dateLabel = day.date
-    ? new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-    : null
+  const dateLabel = new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
     <section aria-labelledby={`day-${day.day}`} className="rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 id={`day-${day.day}`} className="font-semibold text-slate-900">
+          <h3 id={`day-${day.day}`} className="flex items-center gap-2 font-semibold text-slate-900">
+            <span className="size-2.5 rounded-full" style={{ backgroundColor: dayColor(day.day) }} aria-hidden />
             Day {day.day}{theme && <span className="font-normal text-slate-500"> &middot; {theme}</span>}
           </h3>
-          {dateLabel && <p className="mt-0.5 text-sm text-slate-500">{dateLabel}</p>}
+          <p className="mt-0.5 text-sm text-slate-500">{dateLabel}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <WeatherBadge weather={day.weather} />
@@ -114,45 +108,60 @@ const DaySection = ({ trip, day, items, canEdit }) => {
       </div>
       {replanning && <ReplanForm tripId={trip.id} day={day.day} onClose={() => setReplanning(false)} />}
 
-      {items.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">Nothing planned for this day.</p>
-      ) : (
-        <ol className="mt-4 space-y-3">
-          {items.map((item) => (
-            <li key={item.id} className="flex gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-              <span className="flex w-14 shrink-0 items-start gap-1 pt-0.5 text-xs font-semibold tabular-nums text-slate-500">
-                <LuClock className="mt-px size-3.5" aria-hidden />
-                {item.start_time?.slice(0, 5) ?? item.slot}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-semibold text-slate-900">{item.title}</p>
-                  <Score score={item.score} />
-                </div>
-                {item.description && <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.description}</p>}
-                <p className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
-                  {item.category && <span className="capitalize">{item.category}</span>}
-                  {Number(item.est_cost) > 0
-                    ? <span>about {formatMoney(item.est_cost, trip.currency)} per person</span>
-                    : <span>free</span>}
-                  {item.lat && <span className="inline-flex items-center gap-1"><LuMapPin className="size-3" aria-hidden /> on map</span>}
-                </p>
-              </div>
+      <SortableContext id={`day-${day.day}`} items={itemIds} strategy={verticalListSortingStrategy}>
+        <ol
+          ref={setNodeRef}
+          className={cn(
+            'mt-4 min-h-14 space-y-3 rounded-xl transition-colors',
+            isOver && itemIds.length === 0 && 'bg-brand-50 outline-2 outline-dashed outline-brand-300',
+          )}
+        >
+          {itemIds.length === 0 && !adding && (
+            <li className="flex min-h-14 items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-500">
+              {canEdit ? 'Nothing planned yet. Drag an activity here or add one.' : 'Nothing planned for this day.'}
             </li>
+          )}
+          {itemIds.map((id) => (
+            <ItemCard key={id} item={itemsById.get(id)} trip={trip} canEdit={canEdit} near={near} />
           ))}
         </ol>
-      )}
+      </SortableContext>
+
+      {canEdit && (adding ? (
+        <div className="mt-3"><ItemForm trip={trip} day={day.day} near={near} onClose={() => setAdding(false)} /></div>
+      ) : (
+        <Button variant="ghost" size="sm" className="mt-3" onClick={() => setAdding(true)}>
+          <LuPlus className="size-4" aria-hidden /> Add activity
+        </Button>
+      ))}
     </section>
   )
 }
 
+// { 1: [ids], 2: [ids], ... } in display order
+const groupByDay = (items, dayCount) => {
+  const columns = Object.fromEntries(Array.from({ length: dayCount }, (_, i) => [i + 1, []]))
+  for (const item of items) (columns[item.day] ??= []).push(item.id)
+  return columns
+}
+
+const findDay = (columns, id) => {
+  if (typeof id === 'string' && id.startsWith('day-')) return Number(id.slice(4))
+  return Number(Object.keys(columns).find((day) => columns[day].includes(id)))
+}
+
 const ItineraryTab = ({ trip }) => {
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
   const canEdit = trip.role === 'owner' || trip.role === 'editor'
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false)
+  const [dragColumns, setDragColumns] = useState(null)
+  const [activeId, setActiveId] = useState(null)
+  const autoStarted = useRef(false)
+  const itemsKey = ['trip', String(trip.id), 'items']
 
   const itemsQuery = useQuery({
-    queryKey: ['trip', String(trip.id), 'items'],
+    queryKey: itemsKey,
     queryFn: () => api.get(`/trips/${trip.id}/items`).then((r) => r.data),
   })
 
@@ -164,19 +173,131 @@ const ItineraryTab = ({ trip }) => {
     },
   })
 
+  const reorder = useMutation({
+    mutationFn: (days) => api.put(`/trips/${trip.id}/items/order`, { days }).then((r) => r.data),
+    onSuccess: (items) => queryClient.setQueryData(itemsKey, items),
+    onError: () => queryClient.invalidateQueries({ queryKey: itemsKey }),
+  })
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  // Coming from the new-trip wizard with "plan with AI right away" ticked
+  const shouldAutoGenerate = searchParams.get('generate') === '1'
+  useEffect(() => {
+    if (!shouldAutoGenerate || autoStarted.current || !itemsQuery.isSuccess) return
+    autoStarted.current = true
+    setSearchParams({}, { replace: true })
+    if (canEdit && itemsQuery.data.length === 0) generate.mutate()
+  }, [shouldAutoGenerate, itemsQuery.isSuccess, itemsQuery.data, canEdit, generate, setSearchParams])
+
+  const items = useMemo(() => itemsQuery.data ?? [], [itemsQuery.data])
+  const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items])
+  const dayCount = tripLength(trip.start_date, trip.end_date)
+  const savedColumns = useMemo(() => groupByDay(items, dayCount), [items, dayCount])
+  const columns = dragColumns ?? savedColumns
+
+  // Every trip day is shown, with the forecast from the saved plan when there is one
+  const days = useMemo(() => {
+    const weatherByDay = new Map((trip.plan?.days ?? []).map((d) => [d.day, d.weather]))
+    const start = new Date(`${String(trip.start_date).slice(0, 10)}T00:00:00`)
+    return Array.from({ length: dayCount }, (_, i) => {
+      const date = new Date(start)
+      date.setDate(start.getDate() + i)
+      const pad = (n) => String(n).padStart(2, '0')
+      return { day: i + 1, date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`, weather: weatherByDay.get(i + 1) ?? null }
+    })
+  }, [trip.plan, trip.start_date, dayCount])
+
+  // Centre for place search: the destination, or the average of pinned activities
+  const near = useMemo(() => {
+    if (trip.destination_lat != null) return { lat: trip.destination_lat, lng: trip.destination_lng }
+    const pinned = items.filter((i) => i.lat != null)
+    if (pinned.length === 0) return null
+    return {
+      lat: pinned.reduce((sum, i) => sum + i.lat, 0) / pinned.length,
+      lng: pinned.reduce((sum, i) => sum + i.lng, 0) / pinned.length,
+    }
+  }, [trip.destination_lat, trip.destination_lng, items])
+
+  const title = (id) => itemsById.get(id)?.title ?? 'activity'
+  // "position 2 of 4 in day 1" for screen reader users moving items with the keyboard
+  const place = (overId) => {
+    const day = findDay(columns, overId)
+    const list = columns[day] ?? []
+    const index = list.indexOf(overId)
+    return `position ${index === -1 ? 1 : index + 1} of ${Math.max(list.length, 1)} in day ${day}`
+  }
+  const announcements = {
+    onDragStart: ({ active }) => `Picked up ${title(active.id)}. Use the arrow keys to move it, Space to drop, Escape to cancel.`,
+    onDragOver: ({ active, over }) => over ? `${title(active.id)} is at ${place(over.id)}.` : `${title(active.id)} is not over a day.`,
+    onDragEnd: ({ active, over }) => over ? `${title(active.id)} was dropped at ${place(over.id)}.` : `${title(active.id)} was dropped.`,
+    onDragCancel: ({ active }) => `Moving ${title(active.id)} was cancelled.`,
+  }
+
+  const onDragStart = ({ active }) => {
+    setActiveId(active.id)
+    setDragColumns(savedColumns)
+  }
+
+  // Moves the item into another day's list while it is dragged across
+  const onDragOver = ({ active, over }) => {
+    if (!over) return
+    setDragColumns((current) => {
+      const from = findDay(current, active.id)
+      const to = findDay(current, over.id)
+      if (!from || !to || from === to) return current
+      const target = current[to]
+      const overIndex = target.indexOf(over.id)
+      const insertAt = overIndex === -1 ? target.length : overIndex
+      return {
+        ...current,
+        [from]: current[from].filter((id) => id !== active.id),
+        [to]: [...target.slice(0, insertAt), active.id, ...target.slice(insertAt)],
+      }
+    })
+  }
+
+  const onDragEnd = ({ active, over }) => {
+    setActiveId(null)
+    if (!over || !dragColumns) {
+      setDragColumns(null)
+      return
+    }
+
+    const day = findDay(dragColumns, active.id)
+    const list = dragColumns[day]
+    const overIndex = list.indexOf(over.id)
+    const finalColumns = overIndex === -1
+      ? dragColumns
+      : { ...dragColumns, [day]: arrayMove(list, list.indexOf(active.id), overIndex) }
+
+    const changed = Object.keys(finalColumns)
+      .filter((d) => finalColumns[d].join() !== savedColumns[d].join())
+      .map((d) => ({ day: Number(d), ids: finalColumns[d] }))
+
+    if (changed.length > 0) {
+      // Optimistic: show the new order straight away, then replace with the server's answer
+      queryClient.setQueryData(itemsKey, (old) => {
+        const position = new Map(Object.entries(finalColumns).flatMap(([d, ids]) => ids.map((id, i) => [id, [Number(d), i]])))
+        return old
+          .map((item) => ({ ...item, day: position.get(item.id)[0], position: position.get(item.id)[1] }))
+          .sort((a, b) => a.day - b.day || a.position - b.position)
+      })
+      reorder.mutate(changed)
+    }
+    setDragColumns(null)
+  }
+
   if (itemsQuery.isLoading) return <Spinner className="text-brand-700" />
   if (itemsQuery.isError) return <Alert>{getErrorMessage(itemsQuery.error, 'Could not load the itinerary')}</Alert>
-
-  const items = itemsQuery.data
-  const plan = trip.plan
-  // Days come from the saved plan (with weather); seeded trips without a plan fall back to the item days
-  const days = plan?.days?.length
-    ? plan.days
-    : [...new Set(items.map((i) => i.day))].map((d) => ({ day: d, date: null, weather: null }))
-
   if (generate.isPending) return <GeneratingCard />
 
-  if (items.length === 0) {
+  const plan = trip.plan
+
+  if (items.length === 0 && !plan) {
     return (
       <div className="space-y-4">
         {generate.isError && <Alert>{getErrorMessage(generate.error, 'Could not generate the itinerary')}</Alert>}
@@ -200,6 +321,7 @@ const ItineraryTab = ({ trip }) => {
   return (
     <div className="space-y-6">
       {generate.isError && <Alert>{getErrorMessage(generate.error, 'Could not generate the itinerary')}</Alert>}
+      {reorder.isError && <Alert>{getErrorMessage(reorder.error, 'Could not save the new order')}</Alert>}
 
       {plan && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5" aria-label="Plan summary">
@@ -213,7 +335,7 @@ const ItineraryTab = ({ trip }) => {
             </span>
             {canEdit && (confirmingRegenerate ? (
               <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-                Replace the whole plan?
+                Replace the whole plan, including your edits?
                 <Button size="sm" onClick={() => generate.mutate()}>Regenerate</Button>
                 <Button size="sm" variant="ghost" onClick={() => setConfirmingRegenerate(false)}>Cancel</Button>
               </div>
@@ -236,9 +358,36 @@ const ItineraryTab = ({ trip }) => {
         </section>
       )}
 
-      {days.map((day) => (
-        <DaySection key={day.day} trip={trip} day={day} items={items.filter((i) => i.day === day.day)} canEdit={canEdit} />
-      ))}
+      {canEdit && items.length > 1 && (
+        <p className="text-sm text-slate-500">Drag the handle on an activity to reorder it or move it to another day. Keyboard: focus the handle, press Space, then use the arrow keys.</p>
+      )}
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        accessibility={{ announcements }}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => { setActiveId(null); setDragColumns(null) }}
+      >
+        {days.map((day) => (
+          <DaySection
+            key={day.day}
+            trip={trip}
+            day={day}
+            itemIds={columns[day.day] ?? []}
+            itemsById={itemsById}
+            canEdit={canEdit}
+            near={near}
+          />
+        ))}
+        <DragOverlay>
+          {activeId && itemsById.get(activeId) && (
+            <ItemBody item={itemsById.get(activeId)} currency={trip.currency} className="bg-white shadow-xl ring-2 ring-brand-600/30" />
+          )}
+        </DragOverlay>
+      </DndContext>
     </div>
   )
 }

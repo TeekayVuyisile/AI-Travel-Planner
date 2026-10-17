@@ -20,3 +20,10 @@ export const statusLabel = (trip) => {
   if (until === 1) return 'Tomorrow'
   return `In ${until} days`
 }
+
+export const describePlace = (place) =>
+  [place.region, place.country].filter((part) => part && part !== place.name).join(', ')
+
+// One colour per day, used on the map markers, routes and day labels
+export const DAY_COLORS = ['#0284c7', '#ea580c', '#7c3aed', '#059669', '#e11d48', '#d97706', '#0d9488', '#4f46e5']
+export const dayColor = (day) => DAY_COLORS[(day - 1) % DAY_COLORS.length]
