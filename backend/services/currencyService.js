@@ -107,6 +107,7 @@ async getExchangeRates(baseCurrency = 'ZAR') {
 }
 
   getMockConversion(amount, fromCurrency, toCurrency) {
+    // Approximate rates per 1 ZAR; converting between two other currencies goes through ZAR
     const mockRates = {
       'USD': 0.054,
       'EUR': 0.049,
@@ -114,7 +115,7 @@ async getExchangeRates(baseCurrency = 'ZAR') {
       'ZAR': 1.000
     };
 
-    const rate = mockRates[toCurrency] || 1;
+    const rate = (mockRates[toCurrency] || 1) / (mockRates[fromCurrency] || 1);
     const convertedAmount = amount * rate;
 
     return {

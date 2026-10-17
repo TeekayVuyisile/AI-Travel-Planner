@@ -26,8 +26,58 @@ const Score = ({ score }) => {
   )
 }
 
+// Thumbs up / down for every group member. Clicking your current vote again clears it.
+const VoteButtons = ({ item, trip }) => {
+  const queryClient = useQueryClient()
+  const itemsKey = ['trip', String(trip.id), 'items']
+  const vote = useMutation({
+    mutationFn: (value) => api.put(`/trips/${trip.id}/items/${item.id}/vote`, { vote: value }).then((r) => r.data),
+    onMutate: async (value) => {
+      await queryClient.cancelQueries({ queryKey: itemsKey })
+      const previous = queryClient.getQueryData(itemsKey)
+      queryClient.setQueryData(itemsKey, (items) => items.map((i) => (
+        i.id === item.id ? { ...i, my_vote: value, score: i.score - i.my_vote + value } : i
+      )))
+      return { previous }
+    },
+    onError: (_error, _value, context) => queryClient.setQueryData(itemsKey, context.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: itemsKey }),
+  })
+
+  const button = (value, Icon, label) => {
+    const pressed = item.my_vote === value
+    return (
+      <button
+        type="button"
+        aria-pressed={pressed}
+        aria-label={`${label} ${item.title}`}
+        onClick={() => vote.mutate(pressed ? 0 : value)}
+        className={cn(
+          'inline-flex size-9 items-center justify-center rounded-lg transition-colors',
+          pressed
+            ? value > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+            : 'text-slate-400 hover:bg-slate-200 hover:text-slate-700',
+        )}
+      >
+        <Icon className="size-4" aria-hidden />
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-0.5" role="group" aria-label={`Votes for ${item.title}`}>
+      {button(1, LuThumbsUp, 'Vote for')}
+      <span className={cn('min-w-6 text-center text-sm font-semibold tabular-nums', item.score > 0 ? 'text-emerald-700' : item.score < 0 ? 'text-rose-700' : 'text-slate-500')} aria-label={`Score ${item.score}`}>
+        {item.score > 0 ? `+${item.score}` : item.score}
+      </span>
+      {button(-1, LuThumbsDown, 'Vote against')}
+    </div>
+  )
+}
+
 // Visual body of an activity. Also rendered inside the DragOverlay, so it holds no hooks.
-export const ItemBody = ({ item, currency, handle, actions, className }) => (
+// `votes` replaces the read-only score badge when the card is interactive.
+export const ItemBody = ({ item, currency, handle, actions, votes, className }) => (
   <div className={cn('flex gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-4', className)}>
     {handle}
     <span className="flex w-14 shrink-0 items-start gap-1 pt-0.5 text-xs font-semibold tabular-nums text-slate-500">
@@ -37,7 +87,7 @@ export const ItemBody = ({ item, currency, handle, actions, className }) => (
     <div className="min-w-0 flex-1">
       <div className="flex items-start justify-between gap-3">
         <p className="font-semibold text-slate-900">{item.title}</p>
-        <Score score={item.score} />
+        {votes ?? <Score score={item.score} />}
       </div>
       {item.description && <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.description}</p>}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -110,7 +160,7 @@ const ItemCard = ({ item, trip, canEdit, near }) => {
 
   return (
     <li ref={setNodeRef} style={style} className={cn(isDragging && 'opacity-40')}>
-      <ItemBody item={item} currency={trip.currency} handle={handle} actions={actions} />
+      <ItemBody item={item} currency={trip.currency} handle={handle} actions={actions} votes={<VoteButtons item={item} trip={trip} />} />
       {remove.isError && <p className="mt-1 text-sm text-rose-600">{getErrorMessage(remove.error, 'Could not remove it')}</p>}
     </li>
   )

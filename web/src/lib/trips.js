@@ -27,3 +27,13 @@ export const describePlace = (place) =>
 // One colour per day, used on the map markers, routes and day labels
 export const DAY_COLORS = ['#0284c7', '#ea580c', '#7c3aed', '#059669', '#e11d48', '#d97706', '#0d9488', '#4f46e5']
 export const dayColor = (day) => DAY_COLORS[(day - 1) % DAY_COLORS.length]
+
+export const EXPENSE_CATEGORIES = [
+  { id: 'accommodation', label: 'Accommodation' },
+  { id: 'food', label: 'Food and drink' },
+  { id: 'transport', label: 'Transport' },
+  { id: 'activities', label: 'Activities' },
+  { id: 'shopping', label: 'Shopping' },
+  { id: 'other', label: 'Other' },
+]
+export const expenseCategoryLabel = (id) => EXPENSE_CATEGORIES.find((c) => c.id === id)?.label ?? id

@@ -32,6 +32,12 @@ class TripMember {
     return result.rows;
   }
 
+  static async updateRole(tripId, userId, role) {
+    const query = "UPDATE trip_members SET role = $3 WHERE trip_id = $1 AND user_id = $2 AND role <> 'owner' RETURNING *";
+    const result = await db.query(query, [tripId, userId, role]);
+    return result.rows[0];
+  }
+
   static async remove(tripId, userId) {
     const query = 'DELETE FROM trip_members WHERE trip_id = $1 AND user_id = $2 AND role <> $3 RETURNING *';
     const result = await db.query(query, [tripId, userId, 'owner']);

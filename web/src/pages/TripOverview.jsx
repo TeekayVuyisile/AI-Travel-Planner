@@ -2,7 +2,7 @@ import { Suspense, lazy, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  LuArrowLeft, LuBackpack, LuBot, LuCalendarDays, LuClock, LuDownload, LuListOrdered, LuMap, LuMapPin, LuTrash2, LuUsers, LuWallet,
+  LuArrowLeft, LuBackpack, LuBot, LuCalendarDays, LuClock, LuDownload, LuListOrdered, LuMap, LuMapPin, LuReceipt, LuTrash2, LuUsers, LuWallet,
 } from 'react-icons/lu'
 import api, { getErrorMessage } from '../lib/api'
 import { cn } from '../lib/cn'
@@ -15,6 +15,8 @@ import Spinner from '../components/ui/Spinner'
 import ItineraryTab from '../components/trip/ItineraryTab'
 import PackingTab from '../components/trip/PackingTab'
 import AssistantTab from '../components/trip/AssistantTab'
+import BudgetTab from '../components/trip/BudgetTab'
+import GroupTab from '../components/trip/GroupTab'
 
 // Leaflet is only downloaded when someone opens the map
 const MapTab = lazy(() => import('../components/trip/MapTab'))
@@ -23,6 +25,8 @@ const TABS = [
   { id: 'itinerary', label: 'Itinerary', icon: LuListOrdered, Component: ItineraryTab },
   { id: 'map', label: 'Map', icon: LuMap, Component: MapTab },
   { id: 'packing', label: 'Packing', icon: LuBackpack, Component: PackingTab },
+  { id: 'budget', label: 'Budget', icon: LuReceipt, Component: BudgetTab },
+  { id: 'group', label: 'Group', icon: LuUsers, Component: GroupTab },
   { id: 'assistant', label: 'Assistant', icon: LuBot, Component: AssistantTab },
 ]
 

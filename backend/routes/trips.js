@@ -7,6 +7,9 @@ import Trip from '../models/Trip.js';
 import Itinerary from '../models/Itinerary.js';
 import planRoutes from './plan.js';
 import itemRoutes from './items.js';
+import groupRoutes from './group.js';
+import expenseRoutes from './expenses.js';
+import alertService from '../services/alertService.js';
 
 const router = express.Router();
 
@@ -14,6 +17,8 @@ const router = express.Router();
 router.use(auth);
 router.use(planRoutes);
 router.use(itemRoutes);
+router.use(groupRoutes);
+router.use(expenseRoutes);
 
 // Validation middleware
 const tripValidation = [
@@ -96,6 +101,16 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Get trips error:', error);
     res.status(500).json({ error: 'Failed to fetch trips' });
+  }
+});
+
+// Weather warnings for the signed-in user's upcoming trips (declared before /:tripId)
+router.get('/alerts', async (req, res) => {
+  try {
+    res.json(await alertService.forUser(req.user.id));
+  } catch (error) {
+    console.error('Alerts error:', error);
+    res.status(500).json({ error: 'Failed to check the weather' });
   }
 });
 
