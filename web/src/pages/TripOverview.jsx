@@ -12,6 +12,9 @@ import { Avatar } from '../components/ui/Avatar'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
+import { TripSkeleton } from '../components/ui/Skeleton'
+import { useToast } from '../contexts/ToastContext'
+import { usePageTitle } from '../lib/usePageTitle'
 import ItineraryTab from '../components/trip/ItineraryTab'
 import PackingTab from '../components/trip/PackingTab'
 import AssistantTab from '../components/trip/AssistantTab'
@@ -31,7 +34,7 @@ const TABS = [
 ]
 
 const Stat = ({ icon: Icon, label, children }) => (
-  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+  <div className="rounded-2xl border border-slate-200 bg-surface p-4">
     <dt className="flex items-center gap-2 text-xs font-medium text-slate-500">
       <Icon className="size-4" aria-hidden /> {label}
     </dt>
@@ -42,6 +45,7 @@ const Stat = ({ icon: Icon, label, children }) => (
 // Builds the PDF in the browser. react-pdf is large, so it is imported on first use.
 const DownloadPdf = ({ trip }) => {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [state, setState] = useState('idle')
 
   const download = async () => {
@@ -63,13 +67,13 @@ const DownloadPdf = ({ trip }) => {
       setState('idle')
     } catch (error) {
       console.error('PDF export failed', error)
-      setState('error')
+      toast.error('Could not create the PDF. Try again.')
+      setState('idle')
     }
   }
 
   return (
     <div className="flex items-center gap-2">
-      {state === 'error' && <span className="text-sm text-rose-700" role="alert">Could not create the PDF</span>}
       <Button variant="secondary" size="sm" onClick={download} loading={state === 'working'}>
         {state !== 'working' && <LuDownload className="size-4" aria-hidden />} Download PDF
       </Button>
@@ -80,11 +84,13 @@ const DownloadPdf = ({ trip }) => {
 const DeleteTrip = ({ tripId }) => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [confirming, setConfirming] = useState(false)
   const remove = useMutation({
     mutationFn: () => api.delete(`/trips/${tripId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] })
+      toast.success('Trip deleted')
       navigate('/dashboard', { replace: true })
     },
   })
@@ -151,10 +157,9 @@ const TripOverview = () => {
     queryKey: ['trip', tripId],
     queryFn: () => api.get(`/trips/${tripId}`).then((r) => r.data),
   })
+  usePageTitle(tripQuery.data ? tripQuery.data.title || `${tripQuery.data.destination_city} trip` : 'Trip')
 
-  if (tripQuery.isLoading) {
-    return <div className="flex justify-center py-24 text-brand-700"><Spinner className="size-8" /></div>
-  }
+  if (tripQuery.isLoading) return <TripSkeleton />
   if (tripQuery.isError) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
@@ -166,7 +171,7 @@ const TripOverview = () => {
 
   const trip = tripQuery.data
   const interests = (trip.interests ?? []).map((id) => INTERESTS.find((i) => i.id === id)?.label ?? id)
-  const { Component } = TABS.find((t) => t.id === activeTab)
+  const { Component, label: tabLabel } = TABS.find((t) => t.id === activeTab)
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
@@ -200,14 +205,16 @@ const TripOverview = () => {
         <div className="min-w-0">
           <TabList active={activeTab} onChange={(id) => setSearchParams(id === 'itinerary' ? {} : { tab: id }, { replace: true })} />
           <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="pt-6">
+            {/* Keeps the heading outline h1 > h2 > h3 for the cards inside each tab */}
+            <h2 className="sr-only">{tabLabel}</h2>
             <Suspense fallback={<Spinner className="text-brand-700" />}>
               <Component trip={trip} />
             </Suspense>
           </div>
         </div>
 
-        <aside className="space-y-6">
-          <section aria-labelledby="group-heading" className="rounded-2xl border border-slate-200 bg-white p-5">
+        <aside aria-label="Trip details" className="space-y-6">
+          <section aria-labelledby="group-heading" className="rounded-2xl border border-slate-200 bg-surface p-5">
             <h2 id="group-heading" className="text-sm font-semibold text-slate-900">Group</h2>
             <ul className="mt-4 space-y-3">
               {trip.members.map((member) => (
@@ -221,7 +228,7 @@ const TripOverview = () => {
           </section>
 
           {interests.length > 0 && (
-            <section aria-labelledby="interests-heading" className="rounded-2xl border border-slate-200 bg-white p-5">
+            <section aria-labelledby="interests-heading" className="rounded-2xl border border-slate-200 bg-surface p-5">
               <h2 id="interests-heading" className="text-sm font-semibold text-slate-900">Interests</h2>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {interests.map((label) => (

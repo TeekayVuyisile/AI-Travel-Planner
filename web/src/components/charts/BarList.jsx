@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 // Horizontal bars for comparing a handful of magnitudes. One series, so one colour for every bar
 // (never darker-where-bigger) and no legend. Each bar is focusable and shows its value on hover or focus.
-const BarList = ({ data, format, color = 'var(--color-brand-700)' }) => {
+const BarList = ({ data, format, color = 'var(--color-chart)' }) => {
   const [active, setActive] = useState(null)
   const max = Math.max(...data.map((d) => d.value), 1)
 

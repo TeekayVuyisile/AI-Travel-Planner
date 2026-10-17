@@ -104,7 +104,7 @@ const LocationAutocomplete = ({ label, type = 'city', near, value, onInputChange
           onFocus={() => results.length > 0 && setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           className={cn(
-            'block h-11 w-full rounded-xl border bg-white pl-10 pr-10 text-base text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15',
+            'block h-11 w-full rounded-xl border bg-surface pl-10 pr-10 text-base text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15',
             error ? 'border-rose-400' : 'border-slate-300',
           )}
         />
@@ -116,7 +116,7 @@ const LocationAutocomplete = ({ label, type = 'city', near, value, onInputChange
           id={listId}
           role="listbox"
           aria-label={`${label} suggestions`}
-          className="absolute z-40 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10"
+          className="absolute z-40 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-surface p-1.5 shadow-xl shadow-black/10"
         >
           {results.length === 0 ? (
             <li className="px-3 py-2.5 text-sm text-slate-500">No matching places</li>

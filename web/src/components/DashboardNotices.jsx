@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LuCheck, LuCloudRain, LuMailOpen, LuX } from 'react-icons/lu'
 import api, { getErrorMessage } from '../lib/api'
+import { useToast } from '../contexts/ToastContext'
 import { formatDateRange } from '../lib/format'
 import { ROLE_LABELS } from '../lib/trips'
 import { Avatar } from './ui/Avatar'
@@ -12,6 +13,7 @@ import Button from './ui/Button'
 export const InviteInbox = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const { data: invites = [] } = useQuery({
     queryKey: ['invites'],
     queryFn: () => api.get('/invites').then((r) => r.data),
@@ -22,7 +24,12 @@ export const InviteInbox = () => {
     onSuccess: (data, { action }) => {
       queryClient.invalidateQueries({ queryKey: ['invites'] })
       queryClient.invalidateQueries({ queryKey: ['trips'] })
-      if (action === 'accept') navigate(`/trips/${data.trip_id}`)
+      if (action === 'accept') {
+        toast.success('You joined the trip')
+        navigate(`/trips/${data.trip_id}`)
+      } else {
+        toast.success('Invite declined')
+      }
     },
   })
 
@@ -36,7 +43,7 @@ export const InviteInbox = () => {
       {respond.isError && <div className="mt-3"><Alert>{getErrorMessage(respond.error, 'Could not answer the invite')}</Alert></div>}
       <ul className="mt-3 space-y-2">
         {invites.map((invite) => (
-          <li key={invite.id} className="flex flex-wrap items-center gap-3 rounded-xl bg-white p-3.5 shadow-sm ring-1 ring-slate-200">
+          <li key={invite.id} className="flex flex-wrap items-center gap-3 rounded-xl bg-surface p-3.5 shadow-sm ring-1 ring-slate-200">
             <Avatar user={{ first_name: invite.invited_by_first_name, last_name: invite.invited_by_last_name, avatar_color: invite.invited_by_avatar_color }} />
             <div className="min-w-0 flex-1">
               <p className="font-medium text-slate-900">{invite.title || `${invite.destination_city} trip`}</p>
@@ -76,7 +83,7 @@ export const WeatherAlerts = () => {
       </h2>
       <ul className="mt-3 space-y-2">
         {alerts.map((alert) => (
-          <li key={`${alert.trip_id}-${alert.day}`} className="rounded-xl bg-white p-3.5 text-sm shadow-sm ring-1 ring-amber-200">
+          <li key={`${alert.trip_id}-${alert.day}`} className="rounded-xl bg-surface p-3.5 text-sm shadow-sm ring-1 ring-amber-200">
             <p className="text-slate-900">
               <span className="font-semibold">{alert.trip_title}, day {alert.day}:</span> {alert.reason}
               {alert.changed_since_plan && <span className="text-amber-800"> (the forecast has turned since you planned it)</span>}.

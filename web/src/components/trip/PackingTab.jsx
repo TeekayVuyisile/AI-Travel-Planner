@@ -11,7 +11,7 @@ const PackingItem = ({ item, disabled, onToggle }) => (
     <label
       className={cn(
         'flex min-h-11 gap-3 rounded-xl border p-3.5 transition-colors',
-        item.packed ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-white',
+        item.packed ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-surface',
         disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:border-slate-300',
       )}
     >
@@ -19,7 +19,7 @@ const PackingItem = ({ item, disabled, onToggle }) => (
       <span
         className={cn(
           'mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-600',
-          item.packed ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white',
+          item.packed ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-surface',
         )}
         aria-hidden
       >

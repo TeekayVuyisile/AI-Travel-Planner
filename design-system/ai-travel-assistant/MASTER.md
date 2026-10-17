@@ -172,17 +172,17 @@
 
 ## Anti-Patterns (Do NOT Use)
 
-- ❌ Excessive animation
-- ❌ Dark mode by default
+- Avoid: Excessive animation
+- Avoid: Dark mode by default
 
 ### Additional Forbidden Patterns
 
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
+- Avoid: **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
+- Avoid: **Missing cursor:pointer** — All clickable elements must have cursor:pointer
+- Avoid: **Layout-shifting hovers** — Avoid scale transforms that shift layout
+- Avoid: **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
+- Avoid: **Instant state changes** — Always use transitions (150-300ms)
+- Avoid: **Invisible focus states** — Focus states must be visible for a11y
 
 ---
 

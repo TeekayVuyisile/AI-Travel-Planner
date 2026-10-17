@@ -9,6 +9,8 @@ import { getErrorMessage } from '../lib/api'
 import Button from '../components/ui/Button'
 import Logo from '../components/ui/Logo'
 import { Avatar } from '../components/ui/Avatar'
+import ThemeSwitcher from '../components/ThemeSwitcher'
+import { usePageTitle } from '../lib/usePageTitle'
 
 const features = [
   { icon: LuSparkles, title: 'AI itineraries that read the forecast', body: 'Groq-powered plans built around your dates, interests and budget, with outdoor plans moved off the rainy days.' },
@@ -36,14 +38,14 @@ const faqs = [
 const HeroPreview = () => (
   <div className="relative mx-auto w-full max-w-md lg:max-w-none" aria-hidden>
     <div className="absolute -inset-6 rounded-[2rem] bg-brand-500/20 blur-3xl" />
-    <div className="relative rounded-2xl border border-white/10 bg-white p-5 shadow-2xl shadow-black/30">
+    <div className="relative rounded-2xl border border-white/10 bg-surface p-5 shadow-2xl shadow-black/30">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium text-slate-500">Day 2 - Cape Peninsula</p>
           <p className="text-base font-bold tracking-tight text-slate-900">Cape Town long weekend</p>
         </div>
         <div className="flex -space-x-2">
-          {[['AM', '#0d9488'], ['LD', '#e11d48'], ['SP', '#7c3aed']].map(([i, c]) => (
+          {[['AM', '#0f766e'], ['LD', '#e11d48'], ['SP', '#7c3aed']].map(([i, c]) => (
             <Avatar key={i} user={{ first_name: i[0], last_name: i[1], avatar_color: c }} size="sm" />
           ))}
         </div>
@@ -73,7 +75,7 @@ const HeroPreview = () => (
         </p>
       </div>
     </div>
-    <div className="relative -mt-4 ml-auto mr-6 hidden w-56 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl sm:block">
+    <div className="relative -mt-4 ml-auto mr-6 hidden w-56 rounded-2xl border border-slate-200 bg-surface p-4 shadow-xl sm:block">
       <p className="flex items-center gap-2 text-xs font-semibold text-slate-500"><LuReceipt className="size-3.5" /> Settle up</p>
       <p className="mt-2 text-sm text-slate-700"><span className="font-semibold text-slate-900">Sam</span> pays <span className="font-semibold text-slate-900">Alex</span></p>
       <p className="text-lg font-bold tracking-tight text-slate-900">R 1,330</p>
@@ -82,6 +84,7 @@ const HeroPreview = () => (
 )
 
 const Landing = () => {
+  usePageTitle(null)
   const { user, loginAsDemo } = useAuth()
   const navigate = useNavigate()
   const [demoLoading, setDemoLoading] = useState(false)
@@ -106,11 +109,15 @@ const Landing = () => {
   )
 
   return (
-    <div className="bg-white">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-md">
+    <div className="bg-surface">
+      <a href="#main" className="sr-only z-50 rounded-lg bg-surface px-4 py-2 font-semibold text-slate-900 shadow-lg ring-2 ring-brand-600 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+        Skip to content
+      </a>
+      <header className="keep-colors sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Logo inverse />
           <nav className="flex items-center gap-2" aria-label="Account">
+            <ThemeSwitcher inverse className="hidden md:inline-flex" />
             {user ? (
               <Button as={Link} to="/dashboard" size="sm" variant="inverse">Open my trips</Button>
             ) : (
@@ -123,11 +130,12 @@ const Landing = () => {
         </div>
       </header>
 
-      <section className="relative overflow-hidden bg-slate-950 text-white">
+      <main id="main">
+      <section className="keep-colors relative overflow-hidden bg-slate-950 text-white">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_70%_-10%,rgba(14,165,233,0.35),transparent)]" />
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 px-4 pb-24 pt-16 sm:px-6 lg:grid-cols-2 lg:pb-32 lg:pt-24">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-brand-100">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-surface/5 px-3 py-1 text-xs font-medium text-brand-100">
               <LuSparkles className="size-3.5 text-accent-400" aria-hidden /> AI trip planning for groups
             </p>
             <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
@@ -158,7 +166,7 @@ const Landing = () => {
           </div>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map(({ icon: Icon, title, body }) => (
-              <div key={title} className="rounded-2xl border border-slate-200 bg-white p-6 transition-shadow duration-200 hover:shadow-lg hover:shadow-slate-900/5">
+              <div key={title} className="rounded-2xl border border-slate-200 bg-surface p-6 transition-shadow duration-200 hover:shadow-lg hover:shadow-black/5">
                 <span className="inline-flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                   <Icon className="size-5" aria-hidden />
                 </span>
@@ -176,7 +184,7 @@ const Landing = () => {
           <ol className="mt-12 grid gap-8 md:grid-cols-3">
             {steps.map(({ title, body }, index) => (
               <li key={title} className="relative">
-                <span className="inline-flex size-9 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">{index + 1}</span>
+                <span className="inline-flex size-9 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-slate-50">{index + 1}</span>
                 <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
                 <p className="mt-2 text-slate-600">{body}</p>
               </li>
@@ -203,7 +211,7 @@ const Landing = () => {
       </section>
 
       <section className="px-4 pb-24 sm:px-6">
-        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-slate-950 px-6 py-16 text-center text-white sm:px-12">
+        <div className="keep-colors relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-slate-950 px-6 py-16 text-center text-white sm:px-12">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(40rem_20rem_at_50%_120%,rgba(14,165,233,0.35),transparent)]" />
           <div className="relative">
             <LuCalendarDays className="mx-auto size-8 text-accent-400" aria-hidden />
@@ -213,6 +221,8 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      </main>
 
       <footer className="border-t border-slate-200">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">

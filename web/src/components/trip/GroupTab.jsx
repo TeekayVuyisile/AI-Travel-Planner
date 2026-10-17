@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LuClock, LuLogOut, LuMail, LuUserMinus, LuUserPlus, LuX } from 'react-icons/lu'
 import { useAuth } from '../../contexts/AuthContext'
 import api, { getErrorMessage } from '../../lib/api'
+import { useToast } from '../../contexts/ToastContext'
 import { ROLE_LABELS } from '../../lib/trips'
 import { Avatar } from '../ui/Avatar'
 import Alert from '../ui/Alert'
@@ -16,7 +17,7 @@ const ROLE_HELP = {
   viewer: 'Viewer: can see everything, vote, chat and log expenses.',
 }
 
-const selectClass = 'h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15'
+const selectClass = 'h-9 rounded-lg border border-slate-300 bg-surface px-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15'
 
 const InviteForm = ({ trip, invites }) => {
   const { user } = useAuth()
@@ -49,7 +50,7 @@ const InviteForm = ({ trip, invites }) => {
   return (
     <form
       onSubmit={(event) => { event.preventDefault(); setSent(''); invite.mutate() }}
-      className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5"
+      className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-5"
       noValidate
     >
       <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -96,6 +97,7 @@ const GroupTab = ({ trip }) => {
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const isOwner = trip.role === 'owner'
   const canInvite = isOwner || trip.role === 'editor'
   const [confirmLeave, setConfirmLeave] = useState(false)
@@ -109,22 +111,30 @@ const GroupTab = ({ trip }) => {
 
   const changeRole = useMutation({
     mutationFn: ({ userId, role }) => api.patch(`/trips/${trip.id}/members/${userId}`, { role }),
-    onSuccess: refreshTrip,
+    onSuccess: (_data, { role }) => {
+      refreshTrip()
+      toast.success(`Role changed to ${role}`)
+    },
   })
   const removeMember = useMutation({
     mutationFn: (userId) => api.delete(`/trips/${trip.id}/members/${userId}`),
     onSuccess: (_data, userId) => {
       if (userId === user.id) {
         queryClient.invalidateQueries({ queryKey: ['trips'] })
+        toast.success('You left the trip')
         navigate('/dashboard', { replace: true })
       } else {
         refreshTrip()
+        toast.success('Removed from the trip')
       }
     },
   })
   const cancelInvite = useMutation({
     mutationFn: (inviteId) => api.delete(`/trips/${trip.id}/invites/${inviteId}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'invites'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'invites'] })
+      toast.success('Invite cancelled')
+    },
   })
 
   const error = changeRole.error || removeMember.error || cancelInvite.error
@@ -134,7 +144,7 @@ const GroupTab = ({ trip }) => {
     <div className="space-y-6">
       {error && <Alert>{getErrorMessage(error, 'That did not work')}</Alert>}
 
-      <section aria-labelledby="members-heading" className="rounded-2xl border border-slate-200 bg-white p-5">
+      <section aria-labelledby="members-heading" className="rounded-2xl border border-slate-200 bg-surface p-5">
         <h3 id="members-heading" className="text-sm font-semibold text-slate-900">Members ({trip.members.length})</h3>
         <ul className="mt-4 divide-y divide-slate-100">
           {trip.members.map((m) => (
@@ -177,7 +187,7 @@ const GroupTab = ({ trip }) => {
       {canInvite && <InviteForm trip={trip} invites={invites} />}
 
       {invites.length > 0 && (
-        <section aria-labelledby="pending-heading" className="rounded-2xl border border-slate-200 bg-white p-5">
+        <section aria-labelledby="pending-heading" className="rounded-2xl border border-slate-200 bg-surface p-5">
           <h3 id="pending-heading" className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <LuClock className="size-4 text-slate-500" aria-hidden /> Waiting to accept
           </h3>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../contexts/AuthContext'
 import api, { getErrorMessage } from '../../lib/api'
+import { useToast } from '../../contexts/ToastContext'
 import { cn } from '../../lib/cn'
 import { formatMoney } from '../../lib/format'
 import { EXPENSE_CATEGORIES } from '../../lib/trips'
@@ -11,7 +12,7 @@ import Button from '../ui/Button'
 import Field from '../ui/Field'
 
 const CURRENCIES = ['ZAR', 'USD', 'EUR', 'GBP']
-const selectClass = 'block h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15'
+const selectClass = 'block h-11 w-full rounded-xl border border-slate-300 bg-surface px-3 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-600/15'
 
 const todayWithinTrip = (trip) => {
   const today = new Date().toISOString().slice(0, 10)
@@ -23,6 +24,7 @@ const todayWithinTrip = (trip) => {
 const ExpenseForm = ({ trip, onClose }) => {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const members = trip.members
   const [form, setForm] = useState({
     amount: '',
@@ -42,6 +44,7 @@ const ExpenseForm = ({ trip, onClose }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'expenses'] })
       queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'budget'] })
+      toast.success('Expense saved')
       onClose()
     },
   })
@@ -82,7 +85,7 @@ const ExpenseForm = ({ trip, onClose }) => {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-5 rounded-2xl border border-brand-200 bg-white p-5 shadow-sm">
+    <form onSubmit={submit} noValidate className="space-y-5 rounded-2xl border border-brand-200 bg-surface p-5 shadow-sm">
       <p className="font-semibold text-slate-900">Log an expense</p>
       {(save.isError || fieldError) && <Alert>{fieldError || getErrorMessage(save.error, 'Could not save the expense')}</Alert>}
 
@@ -126,7 +129,7 @@ const ExpenseForm = ({ trip, onClose }) => {
               type="button"
               aria-pressed={mode === value}
               onClick={() => setMode(value)}
-              className={cn('h-9 rounded-lg px-3 text-sm font-medium', mode === value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600')}
+              className={cn('h-9 rounded-lg px-3 text-sm font-medium', mode === value ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600')}
             >
               {label}
             </button>

@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LuClock, LuGripVertical, LuMapPin, LuPencil, LuThumbsDown, LuThumbsUp, LuTrash2 } from 'react-icons/lu'
 import api, { getErrorMessage } from '../../lib/api'
+import { useToast } from '../../contexts/ToastContext'
 import { cn } from '../../lib/cn'
 import { formatMoney } from '../../lib/format'
 import Button from '../ui/Button'
@@ -111,9 +112,13 @@ const ItemCard = ({ item, trip, canEdit, near }) => {
     disabled: !canEdit || editing,
   })
 
+  const toast = useToast()
   const remove = useMutation({
     mutationFn: () => api.delete(`/trips/${trip.id}/items/${item.id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'items'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trip', String(trip.id), 'items'] })
+      toast.success(`Removed ${item.title}`)
+    },
   })
 
   const style = { transform: CSS.Translate.toString(transform), transition }

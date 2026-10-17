@@ -19,14 +19,14 @@ const AuthLayout = ({ title, subtitle, children, footer }) => (
       </div>
     </div>
 
-    <aside className="relative hidden overflow-hidden bg-slate-950 lg:flex lg:items-center lg:justify-center">
+    <aside className="keep-colors relative hidden overflow-hidden bg-slate-950 lg:flex lg:items-center lg:justify-center">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(40rem_30rem_at_30%_20%,rgba(14,165,233,0.35),transparent)]" />
       <div className="relative max-w-md px-12">
         <p className="text-3xl font-bold tracking-tight text-balance text-white">Less group-chat chaos, more trip.</p>
         <ul className="mt-10 space-y-5">
           {points.map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-center gap-4 text-slate-300">
-              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-brand-300">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface/10 text-brand-300">
                 <Icon className="size-5" aria-hidden />
               </span>
               {text}

@@ -13,7 +13,7 @@ class User {
     
     const query = `
       INSERT INTO users (email, password_hash, first_name, last_name, avatar_color, is_demo)
-      VALUES ($1, $2, $3, $4, COALESCE($5, '#0d9488'), $6)
+      VALUES ($1, $2, $3, $4, COALESCE($5, '#0f766e'), $6)
       RETURNING ${PUBLIC_COLUMNS}
     `;
     

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getErrorMessage } from '../lib/api'
+import { usePageTitle } from '../lib/usePageTitle'
 import AuthLayout from '../components/layout/AuthLayout'
 import DemoButton from '../components/DemoButton'
 import Alert from '../components/ui/Alert'
@@ -19,6 +20,7 @@ const validate = (form) => {
 }
 
 const Register = () => {
+  usePageTitle('Create an account')
   const { register } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '', confirm: '' })

@@ -24,9 +24,16 @@ export const statusLabel = (trip) => {
 export const describePlace = (place) =>
   [place.region, place.country].filter((part) => part && part !== place.name).join(', ')
 
-// One colour per day, used on the map markers, routes and day labels
-export const DAY_COLORS = ['#0284c7', '#ea580c', '#7c3aed', '#059669', '#e11d48', '#d97706', '#0d9488', '#4f46e5']
-export const dayColor = (day) => DAY_COLORS[(day - 1) % DAY_COLORS.length]
+// One colour per day for map pins, routes and day labels (CSS variables in index.css, theme-aware).
+// Only eight hues exist; later days share a neutral colour instead of repeating one.
+export const DAY_COLOR_COUNT = 8
+const daySlot = (day) => (day <= DAY_COLOR_COUNT ? String(day) : 'other')
+export const dayColor = (day) => `var(--day-${daySlot(day)})`
+export const dayInk = (day) => `var(--day-${daySlot(day)}-ink)`
+
+// Light-mode values for the PDF, which cannot read CSS variables
+export const DAY_COLORS_PRINT = ['#256abf', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948']
+export const DAY_OTHER_PRINT = '#64748b'
 
 export const EXPENSE_CATEGORIES = [
   { id: 'accommodation', label: 'Accommodation' },

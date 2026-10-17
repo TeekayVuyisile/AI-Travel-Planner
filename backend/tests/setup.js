@@ -8,7 +8,8 @@ process.env.NODE_ENV = 'test';
 process.env.DB_NAME = process.env.TEST_DB_NAME || 'ai_travel_planner_test';
 process.env.JWT_SECRET ||= 'test-secret';
 process.env.JWT_EXPIRES_IN ||= '1h';
-for (const key of ['GROQ_API_KEY', 'OPENWEATHER_API_KEY', 'OPENTRIPMAP_API_KEY']) {
+// DATABASE_URL is blanked too, so tests can never reach a hosted database
+for (const key of ['GROQ_API_KEY', 'OPENWEATHER_API_KEY', 'OPENTRIPMAP_API_KEY', 'DATABASE_URL']) {
   process.env[key] = '';
 }
 // Fills in DB_HOST, DB_USER and DB_PASSWORD from .env when present. dotenv never overrides

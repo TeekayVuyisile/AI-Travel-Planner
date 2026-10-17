@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Suspense, useEffect, useId, useRef, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { LuChevronsUpDown, LuLayoutDashboard, LuLogOut, LuMapPinned, LuPlus, LuUsers } from 'react-icons/lu'
 import { useAuth } from '../../contexts/AuthContext'
@@ -8,6 +8,7 @@ import { cn } from '../../lib/cn'
 import Logo from '../ui/Logo'
 import { Avatar } from '../ui/Avatar'
 import Spinner from '../ui/Spinner'
+import ThemeSwitcher from '../ThemeSwitcher'
 
 const navItems = [
   { to: '/dashboard', label: 'My trips', icon: LuLayoutDashboard },
@@ -40,6 +41,7 @@ const AccountMenu = ({ compact = false }) => {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const menuRef = useRef(null)
+  const panelId = useId()
 
   const { data: demoUsers = [] } = useQuery({
     queryKey: ['demo-users'],
@@ -73,7 +75,7 @@ const AccountMenu = ({ compact = false }) => {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-controls={panelId}
         aria-label={compact ? 'Account menu' : undefined}
         className={cn(
           'flex items-center gap-3 rounded-xl text-left transition-colors hover:bg-slate-100',
@@ -94,9 +96,9 @@ const AccountMenu = ({ compact = false }) => {
 
       {open && (
         <div
-          role="menu"
+          id={panelId}
           className={cn(
-            'absolute z-30 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10',
+            'absolute z-30 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-surface p-1.5 shadow-xl shadow-black/10',
             compact ? 'right-0 top-full mt-2' : 'bottom-full left-0 mb-2',
           )}
         >
@@ -109,7 +111,6 @@ const AccountMenu = ({ compact = false }) => {
                 <button
                   key={demo.id}
                   type="button"
-                  role="menuitem"
                   onClick={() => switchTo(demo.id)}
                   className="flex h-11 w-full items-center gap-3 rounded-xl px-2.5 text-sm text-slate-700 hover:bg-slate-100"
                 >
@@ -120,9 +121,13 @@ const AccountMenu = ({ compact = false }) => {
               <div className="my-1.5 h-px bg-slate-100" />
             </>
           )}
+          <div className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+            <span className="text-sm text-slate-700">Theme</span>
+            <ThemeSwitcher />
+          </div>
+          <div className="my-1.5 h-px bg-slate-100" />
           <button
             type="button"
-            role="menuitem"
             onClick={() => { logout(); navigate('/') }}
             className="flex h-11 w-full items-center gap-3 rounded-xl px-2.5 text-sm text-slate-700 hover:bg-slate-100"
           >
@@ -136,14 +141,30 @@ const AccountMenu = ({ compact = false }) => {
 
 const AppShell = () => {
   const { user } = useAuth()
+  const { pathname } = useLocation()
+  const mainRef = useRef(null)
+  const firstRender = useRef(true)
+
+  // Client-side navigation is silent for screen readers; moving focus to the new page announces it
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    mainRef.current?.focus({ preventScroll: true })
+    window.scrollTo(0, 0)
+  }, [pathname])
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr]">
-      <aside className="hidden border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-8 lg:p-4">
+      <a href="#main" className="sr-only z-50 rounded-lg bg-surface px-4 py-2 font-semibold text-slate-900 shadow-lg ring-2 ring-brand-600 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+        Skip to content
+      </a>
+      <aside aria-label="Sidebar" className="hidden border-r border-slate-200 bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-8 lg:p-4">
         <Logo to="/dashboard" className="px-2 pt-2" />
         <NavItems />
         {user?.is_demo && (
-          <div className="mt-auto rounded-2xl bg-gradient-to-br from-brand-900 to-brand-700 p-4 text-white">
+          <div className="keep-colors mt-auto rounded-2xl bg-gradient-to-br from-brand-900 to-brand-700 p-4 text-white">
             <LuMapPinned className="size-5 text-accent-400" aria-hidden />
             <p className="mt-2 text-sm font-semibold">You are in demo mode</p>
             <p className="mt-1 text-xs leading-relaxed text-brand-100">
@@ -157,7 +178,7 @@ const AppShell = () => {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur-md lg:hidden">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-surface/85 backdrop-blur-md lg:hidden">
         <div className="flex h-16 items-center justify-between px-4">
           <Logo to="/dashboard" />
           <AccountMenu compact />
@@ -179,7 +200,7 @@ const AppShell = () => {
         </div>
       </header>
 
-      <main className="min-w-0">
+      <main id="main" ref={mainRef} tabIndex={-1} className="min-w-0 focus:outline-none">
         <Suspense fallback={<div className="flex justify-center py-24 text-brand-700"><Spinner className="size-8" /></div>}>
           <Outlet />
         </Suspense>
