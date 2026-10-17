@@ -61,6 +61,11 @@ const PACKING_SCHEMA = object({
   personal: { type: 'array', items: PACKING_ITEM }
 });
 
+const ADVICE_SCHEMA = object({
+  headline: { type: 'string' },
+  tips: { type: 'array', items: { type: 'string' } }
+});
+
 const clean = (value, max = 255) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 
 const describeWeather = ({ day, date, weekday, weather }) => {
@@ -249,6 +254,27 @@ Rules:
       }));
 
     return { shared: normalise(result.shared, 8), personal: normalise(result.personal, 16) };
+  }
+
+  // Short, specific advice on the group's spending so far. `summary` comes from budgetService.
+  async budgetAdvice({ trip, summary }) {
+    const system = `You are a practical travel budget coach. Reply in JSON.
+- headline: one sentence on how the group is doing against the budget, quoting the real numbers.
+- tips: 2 to 4 concrete, destination-specific ways to stay on budget or use the remaining money well, each under 30 words.
+Base everything on the figures given. Do not invent expenses. No emojis.`;
+
+    const user = [
+      `Trip: ${trip.destination_city}${trip.destination_country ? `, ${trip.destination_country}` : ''}, ${summary.days} days, ${trip.travelers_count} travellers`,
+      `Budget: ${summary.total_budget} ${summary.currency}. Spent so far: ${summary.spent} ${summary.currency}. Planned activities: ${summary.planned_total} ${summary.currency}.`,
+      `Days elapsed: ${summary.days_elapsed} of ${summary.days}.`,
+      `Spending by category: ${summary.by_category.map(c => `${c.category} ${c.amount}`).join(', ') || 'none yet'}`
+    ].join('\n');
+
+    const result = await this.completeJSON(system, user, 'budget_advice', ADVICE_SCHEMA);
+    return {
+      headline: clean(result.headline, 300),
+      tips: (Array.isArray(result.tips) ? result.tips : []).map(t => clean(t, 300)).filter(Boolean).slice(0, 4)
+    };
   }
 
   // Streams the assistant's reply. Yields text chunks; honours the abort signal when the client disconnects.

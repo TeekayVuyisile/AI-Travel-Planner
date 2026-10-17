@@ -8,6 +8,7 @@ import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import TripCard from '../components/TripCard'
+import { InviteInbox, WeatherAlerts } from '../components/DashboardNotices'
 
 const CardSkeleton = () => (
   <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -50,6 +51,9 @@ const Dashboard = () => {
           <LuPlus className="size-4" aria-hidden /> Plan a trip
         </Button>
       </div>
+
+      <InviteInbox />
+      <WeatherAlerts />
 
       {isLoading && (
         <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">

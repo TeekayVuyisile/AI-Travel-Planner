@@ -8,6 +8,7 @@ import compression from 'compression';
 // Import routes
 import authRoutes from './routes/auth.js';
 import tripRoutes from './routes/trips.js';
+import inviteRoutes from './routes/invites.js';
 import weatherRoutes from './routes/weather.js';
 import placesRoutes from './routes/places.js';
 import currencyRoutes from './routes/currency.js';
@@ -28,6 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
+app.use('/api/invites', inviteRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/places', placesRoutes);
 app.use('/api/currency', currencyRoutes);

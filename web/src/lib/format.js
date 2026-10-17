@@ -1,5 +1,6 @@
-export const formatMoney = (amount, currency = 'ZAR') =>
-  new Intl.NumberFormat('en-ZA', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(amount) || 0)
+// `exact` keeps cents (for expenses and splits); otherwise amounts round to whole units
+export const formatMoney = (amount, currency = 'ZAR', { exact = false } = {}) =>
+  new Intl.NumberFormat('en-ZA', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: exact ? 2 : 0 }).format(Number(amount) || 0)
 
 // Date-only strings ("2026-11-07") are parsed as local dates, not UTC
 const toDate = (value) => new Date(typeof value === 'string' && value.length === 10 ? `${value}T00:00:00` : value)

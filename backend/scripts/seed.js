@@ -48,7 +48,11 @@ const seed = async () => {
     await client.query('BEGIN');
 
     // Removing the demo users cascades to their trips, memberships, items and expenses
-    await client.query('DELETE FROM users WHERE is_demo = TRUE OR email = ANY($1)', [DEMO_USERS.map(u => u.email)]);
+    // Trips first: deleting users directly fires the trips cascade and the expenses SET NULL actions
+    // in one statement, and the SET NULL update then fails its check against the already-deleted trip.
+    const demoUsers = `SELECT id FROM users WHERE is_demo = TRUE OR email = ANY($1)`;
+    await client.query(`DELETE FROM trips WHERE user_id IN (${demoUsers})`, [DEMO_USERS.map(u => u.email)]);
+    await client.query(`DELETE FROM users WHERE id IN (${demoUsers})`, [DEMO_USERS.map(u => u.email)]);
 
     // Demo users sign in through POST /api/auth/demo, so their password is never used
     const passwordHash = await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 10);
@@ -148,9 +152,9 @@ const seed = async () => {
     ];
     for (const [payer, amount, currency, amountTrip, category, description, offset, splitWith] of expenses) {
       const { rows: [expense] } = await client.query(
-        `INSERT INTO expenses (trip_id, paid_by, amount, currency, amount_trip, category, description, spent_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-        [trip.id, payer.id, amount, currency, amountTrip, category, description, addDays(start, offset)]
+        `INSERT INTO expenses (trip_id, paid_by, amount, currency, amount_trip, fx_rate, category, description, spent_at, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $2) RETURNING id`,
+        [trip.id, payer.id, amount, currency, amountTrip, amountTrip / amount, category, description, addDays(start, offset)]
       );
       const share = Math.round((amountTrip / splitWith.length) * 100) / 100;
       for (const user of splitWith) {
@@ -183,6 +187,6 @@ const seed = async () => {
 };
 
 seed().catch(error => {
-  console.error('Seed failed:', error.message);
+  console.error('Seed failed:', error.message, error.detail ?? '');
   process.exit(1);
 });
