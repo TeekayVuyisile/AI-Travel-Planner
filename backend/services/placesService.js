@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const geocodeCache = new Map();
+
 class PlacesService {
   constructor() {
     this.apiKey = process.env.OPENTRIPMAP_API_KEY;
@@ -42,6 +44,27 @@ class PlacesService {
       return this.formatPlaceData(response.data);
     } catch (error) {
       console.error('Place details API error:', error.response?.data || error.message);
+      return null;
+    }
+  }
+
+  // City centre from OpenStreetMap's free Nominatim geocoder (no key; 1 request/second policy, so results are cached)
+  async geocodeCity(city, country = '') {
+    const query = [city, country].filter(Boolean).join(', ');
+    if (geocodeCache.has(query)) return geocodeCache.get(query);
+
+    try {
+      const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+        params: { q: query, format: 'json', limit: 1 },
+        headers: { 'User-Agent': 'ai-travel-assistant/1.0 (portfolio project)' },
+        timeout: 8000
+      });
+      const hit = response.data[0];
+      const result = hit ? { lat: Number(hit.lat), lng: Number(hit.lon) } : null;
+      geocodeCache.set(query, result);
+      return result;
+    } catch (error) {
+      console.error('Geocoding error:', error.message);
       return null;
     }
   }
@@ -112,7 +135,8 @@ class PlacesService {
         lon: data.point?.lon
       },
       address: data.address || 'Address not available',
-      wikipedia: data.wikipedia || ''
+      wikipedia: data.wikipedia || '',
+      source: 'opentripmap'
     };
   }
 

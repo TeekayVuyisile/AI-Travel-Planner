@@ -6,16 +6,13 @@ import TripMember from '../models/TripMember.js';
 import ItineraryItem from '../models/ItineraryItem.js';
 import Trip from '../models/Trip.js';
 import Itinerary from '../models/Itinerary.js';
-import weatherService from '../services/weatherService.js';
-import placesService from '../services/placesService.js';
-import hotelService from '../services/hotelService.js';
-import itineraryService from '../services/itineraryService.js';
-import currencyService from '../services/currencyService.js';
+import planRoutes from './plan.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(auth);
+router.use(planRoutes);
 
 // Validation middleware
 const tripValidation = [
@@ -95,11 +92,13 @@ router.get('/', async (req, res) => {
 router.get('/:tripId', requireTripRole('viewer'), async (req, res) => {
   try {
     const { tripId } = req.params;
-    const [trip, members] = await Promise.all([
+    const [trip, members, latest] = await Promise.all([
       Trip.findById(tripId),
-      TripMember.findByTripId(tripId)
+      TripMember.findByTripId(tripId),
+      Itinerary.findLatest(tripId)
     ]);
-    res.json({ ...trip, role: req.tripRole, members });
+    const plan = latest ? { ...latest.itinerary_data, days: latest.weather_data?.days || [] } : null;
+    res.json({ ...trip, role: req.tripRole, members, plan });
   } catch (error) {
     console.error('Get trip error:', error);
     res.status(500).json({ error: 'Failed to fetch trip' });
@@ -113,65 +112,6 @@ router.get('/:tripId/items', requireTripRole('viewer'), async (req, res) => {
   } catch (error) {
     console.error('Get items error:', error);
     res.status(500).json({ error: 'Failed to fetch itinerary items' });
-  }
-});
-
-// Generate itinerary for a trip
-router.post('/:tripId/generate-itinerary', requireTripRole('editor'), async (req, res) => {
-  try {
-    const { tripId } = req.params;
-    const trip = await Trip.findById(tripId);
-
-    // Fetch all required data
-    const [weatherData, places, currencyRates] = await Promise.all([
-      weatherService.getWeatherForecast(trip.destination_city, trip.destination_country),
-      placesService.searchPlacesByCity(trip.destination_city, trip.interests),
-      currencyService.getExchangeRates('ZAR')
-    ]);
-
-    // Get hotels
-    const hotels = hotelService.getHotelsByCity(
-      trip.destination_city, 
-      trip.total_budget, 
-      trip.travelers_count
-    );
-
-    // Generate itinerary
-    const itinerary = itineraryService.generateItinerary(
-      trip,
-      weatherData,
-      places,
-      hotels
-    );
-
-    // Generate packing list
-    const packingList = itineraryService.generatePackingList(
-      weatherData,
-      trip.interests,
-      itinerary.daily_itinerary.length
-    );
-
-    // Save itinerary
-    const savedItinerary = await Itinerary.create({
-      trip_id: tripId,
-      itinerary_data: itinerary,
-      weather_data: weatherData,
-      hotels_data: hotels,
-      activities_data: places,
-      budget_analysis: {
-        packing_list: packingList,
-        currency_rates: currencyRates,
-        budget_summary: itinerary.summary
-      }
-    });
-
-    res.json({
-      message: 'Itinerary generated successfully',
-      itinerary: savedItinerary
-    });
-  } catch (error) {
-    console.error('Generate itinerary error:', error);
-    res.status(500).json({ error: 'Failed to generate itinerary' });
   }
 });
 
