@@ -10,7 +10,7 @@ class WeatherService {
     this.baseURL = 'https://api.openweathermap.org/data/2.5';
     
     if (!this.apiKey) {
-      console.warn('⚠️  WARNING: OPENWEATHER_API_KEY is missing from environment variables');
+      console.warn('WARNING: OPENWEATHER_API_KEY is missing from environment variables');
     }
   }
 
@@ -18,7 +18,7 @@ class WeatherService {
     try {
       const location = country ? `${city},${country}` : city;
       
-      console.log(`🌤️  Fetching weather for: ${location}`);
+      console.log(`Fetching weather for: ${location}`);
       
       if (!this.apiKey) {
         throw new Error('OpenWeatherMap API key is missing');
@@ -33,13 +33,13 @@ class WeatherService {
         timeout: 10000
       });
 
-      console.log('✅ Real Weather API response received');
+      console.log('Real Weather API response received');
       console.log('   Temperature:', response.data.main.temp + '°C');
       console.log('   Conditions:', response.data.weather[0].description);
       
       return this.formatWeatherData(response.data);
     } catch (error) {
-      console.error('❌ Weather API failed:');
+      console.error('Weather API failed:');
       console.error('   Status:', error.response?.status);
       console.error('   Error:', error.response?.data?.message || error.message);
       console.error('   Using mock data as fallback');
@@ -52,7 +52,7 @@ class WeatherService {
     try {
       const location = country ? `${city},${country}` : city;
       
-      console.log(`📅 Fetching forecast for: ${location}`);
+      console.log(`Fetching forecast for: ${location}`);
       
       if (!this.apiKey) {
         throw new Error('OpenWeatherMap API key is missing');
@@ -67,10 +67,10 @@ class WeatherService {
         timeout: 10000
       });
 
-      console.log('✅ Weather forecast API response received');
+      console.log('Weather forecast API response received');
       return this.formatForecastData(response.data);
     } catch (error) {
-      console.error('❌ Weather forecast API error:', error.response?.data || error.message);
+      console.error('Weather forecast API error:', error.response?.data || error.message);
       console.log('Using mock forecast data as fallback');
       return this.getMockForecastData(city);
     }
