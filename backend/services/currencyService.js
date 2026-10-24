@@ -2,7 +2,6 @@ import axios from 'axios';
 
 class CurrencyService {
   constructor() {
-    this.apiKey = process.env.EXCHANGERATE_API_KEY;
     this.baseURL = 'https://api.exchangerate-api.com/v4/latest';
   }
 
