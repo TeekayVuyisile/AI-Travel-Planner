@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const geocodeCache = new Map();
 const autocompleteCache = new Map();
+let nominatimNextAt = 0;
 
 class PlacesService {
   constructor() {
@@ -50,6 +51,37 @@ class PlacesService {
   }
 
   // City centre from OpenStreetMap's free Nominatim geocoder (no key; 1 request/second policy, so results are cached)
+  // Finds a named place within `radiusDeg` of `near`, for checking AI suggestions. Tries Photon first
+  // and falls back to Nominatim when Photon is busy (it returns 503 under load). Nominatim allows
+  // occasional lookups like these but no more than one per second, so calls to it are spaced out.
+  // `skipPhoton` lets a caller go straight to Nominatim once Photon has failed during a run.
+  async searchNearby(query, near, radiusDeg, { skipPhoton = false, onPhotonError } = {}) {
+    try {
+      if (skipPhoton) throw new Error('Photon skipped');
+      return await this.autocomplete(query, { type: 'place', near, radiusDeg, timeout: 3000 });
+    } catch (error) {
+      if (!skipPhoton) onPhotonError?.(error);
+      const wait = nominatimNextAt - Date.now();
+      nominatimNextAt = Math.max(Date.now(), nominatimNextAt) + 1100;
+      if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+
+      const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+        params: {
+          q: query,
+          format: 'jsonv2',
+          limit: 5,
+          viewbox: [near.lng - radiusDeg, near.lat + radiusDeg, near.lng + radiusDeg, near.lat - radiusDeg].join(','),
+          bounded: 1
+        },
+        headers: { 'User-Agent': 'ai-travel-assistant/1.0 (portfolio project)' },
+        timeout: 8000
+      });
+      return response.data
+        .filter(r => r.name)
+        .map(r => ({ name: r.name, lat: Number(r.lat), lng: Number(r.lon), kind: r.type }));
+    }
+  }
+
   async geocodeCity(city, country = '') {
     const query = [city, country].filter(Boolean).join(', ');
     if (geocodeCache.has(query)) return geocodeCache.get(query);
@@ -75,7 +107,7 @@ class PlacesService {
   // "no matches" apart from "search unavailable".
   // type 'city' returns towns and cities; type 'place' returns any POI, biased towards `near`.
   // `radiusDeg` restricts results to a box around `near` (Photon's location bias alone is weak).
-  async autocomplete(query, { type = 'city', near = null, radiusDeg = null } = {}) {
+  async autocomplete(query, { type = 'city', near = null, radiusDeg = null, timeout = 6000 } = {}) {
     const key = `${type}|${query.toLowerCase()}|${near ? `${near.lat.toFixed(2)},${near.lng.toFixed(2)}` : ''}|${radiusDeg ?? ''}`;
     if (autocompleteCache.has(key)) return autocompleteCache.get(key);
 
@@ -93,7 +125,7 @@ class PlacesService {
     try {
       const response = await axios.get(`https://photon.komoot.io/api/?${params}`, {
         headers: { 'User-Agent': 'ai-travel-assistant/1.0 (portfolio project)' },
-        timeout: 6000
+        timeout
       });
       const results = response.data.features.map(({ properties: p, geometry }) => ({
         name: p.name,

@@ -11,6 +11,8 @@ import { toISODate, tripDayCount } from '../utils/dates.js';
 
 // The AI plans long trips in chunks so each response stays small and fast
 const DAYS_PER_AI_CALL = 7;
+// Upper bound on checking AI places against OpenStreetMap after generation
+const VERIFY_BUDGET_MS = 15000;
 
 
 // One entry per trip day, with the forecast attached when the date falls inside the forecast window.
@@ -125,10 +127,28 @@ const distanceKm = (a, b) => {
 // AI coordinates are estimates and can be kilometres off. Look each activity up on OpenStreetMap
 // near the destination; a clear name match replaces the estimate and marks the pin verified.
 // Unmatched items keep the AI estimate, shown on the map as an approximate location.
-const refineCoordinates = async (items, center, cityName) => {
+export const refineCoordinates = async (items, center, cityName) => {
   if (!center) return items;
-  // Photon throttles bursts; once it reports busy, leave the remaining items as AI estimates
-  let geocoderBusy = false;
+  // Lookups go to Photon with a Nominatim fallback (placesService.searchNearby). The whole check has
+  // a time budget so generation never hangs; anything not checked in time keeps its AI estimate,
+  // as does everything once both geocoders fail several times in a row.
+  const deadline = Date.now() + VERIFY_BUDGET_MS;
+  let consecutiveFailures = 0;
+  let photonDown = false;
+  const search = async (query) => {
+    if (consecutiveFailures >= 3 || Date.now() > deadline) return null;
+    try {
+      const results = await placesService.searchNearby(query, center, 0.35, {
+        skipPhoton: photonDown,
+        onPhotonError: () => { photonDown = true; }
+      });
+      consecutiveFailures = 0;
+      return results;
+    } catch {
+      consecutiveFailures += 1;
+      return null;
+    }
+  };
   // The destination's own name says nothing about which place in it is meant
   const cityWords = placeWords(cityName);
   const distinctive = (text) => new Set([...placeWords(text)].filter(w => !cityWords.has(w)));
@@ -136,21 +156,19 @@ const refineCoordinates = async (items, center, cityName) => {
   const lookup = async (item) => {
     // "Knysna Waterfront - Art & Craft Market" -> the part naming the place
     const name = item.title.split(/\s[-–—(]\s?|:\s/)[0].trim();
+    // "Shopping at Victoria Street Market" -> "Victoria Street Market"
+    const afterAt = name.match(/\s(?:at|in)\s+(.+)$/i)?.[1] ?? '';
     const words = name.split(/\s+/);
-    // Photon needs every word to match, so retry with trailing words dropped ("Beach Walk" -> "Beach")
-    const queries = [...new Set([name, words.slice(0, -1).join(' '), words.slice(0, -2).join(' ')])]
-      .filter(q => distinctive(q).size > 0);
+    // Photon needs every word to match, so also try with trailing words dropped ("Beach Walk" -> "Beach")
+    const queries = [...new Set([afterAt, name, words.slice(0, -1).join(' '), words.slice(0, -2).join(' ')])]
+      .filter(q => q && distinctive(q).size > 0);
 
-    for (const query of queries) {
-      if (geocoderBusy) break;
+    // Nominatim is rate-limited to one call a second but matches loosely, so after falling back to it
+    // each item gets only its best query
+    for (const query of photonDown ? queries.slice(0, 1) : queries) {
       const wanted = distinctive(query);
-      let results;
-      try {
-        results = await placesService.autocomplete(query, { type: 'place', near: center, radiusDeg: 0.35 });
-      } catch {
-        geocoderBusy = true;
-        break;
-      }
+      const results = await search(query);
+      if (!results) continue;
       const best = results
         .filter(r => distanceKm(center, r) <= 40)
         .map(r => ({ r, score: similarity(wanted, distinctive(r.name)) }))
