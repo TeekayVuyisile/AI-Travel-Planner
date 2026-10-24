@@ -22,8 +22,16 @@ app.use(compression());
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined'));
 }
+// CLIENT_URL may be a full URL or a bare host (Render's service references give hosts),
+// and may list several origins separated by commas
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean)
+  .map(origin => (/^https?:\/\//.test(origin) ? origin : `https://${origin}`));
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
