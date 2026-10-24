@@ -1,9 +1,10 @@
 import { TOKEN_KEY } from './api'
+import { API_BASE } from './apiBase'
 
 // POSTs JSON and reads a text/event-stream response, calling onEvent for each `data:` payload.
 // axios cannot stream response bodies in the browser, so this uses fetch directly.
 export const postEventStream = async (path, body, { onEvent, signal }) => {
-  const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

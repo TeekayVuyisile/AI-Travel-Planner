@@ -1,9 +1,10 @@
 import axios from 'axios'
+import { API_BASE } from './apiBase'
 
 export const TOKEN_KEY = 'token'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE,
 })
 
 api.interceptors.request.use((config) => {
