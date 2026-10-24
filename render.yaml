@@ -25,11 +25,10 @@ services:
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
+      # Public URLs are set explicitly: fromService "host" gives the private-network name,
+      # which browsers cannot reach. Update both if a service is renamed.
       - key: CLIENT_URL
-        fromService:
-          type: web
-          name: ai-travel-assistant
-          property: host
+        value: https://ai-travel-assistant-cp6l.onrender.com
 
   - type: web
     name: ai-travel-assistant
@@ -43,9 +42,6 @@ services:
         source: /*
         destination: /index.html
     envVars:
-      # Baked in at build time; src/lib/apiBase.js turns it into https://<host>/api
-      - key: VITE_API_HOST
-        fromService:
-          type: web
-          name: ai-travel-assistant-api
-          property: host
+      # Baked in at build time
+      - key: VITE_API_URL
+        value: https://ai-travel-assistant-api.onrender.com/api

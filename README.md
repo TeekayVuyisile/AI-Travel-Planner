@@ -4,6 +4,8 @@
 
 A group trip planner that builds a day-by-day itinerary around the weather forecast, writes a packing list that explains every item, and keeps a shared budget that works out who owes whom.
 
+**Live demo: [ai-travel-assistant-cp6l.onrender.com](https://ai-travel-assistant-cp6l.onrender.com)** - choose "Try the live demo"; no sign-up needed. It runs on free hosting, so the first load after a quiet period can take about a minute while the API wakes up.
+
 ![Landing page](docs/screenshots/landing.jpg)
 
 ## Features
@@ -115,19 +117,15 @@ Backend tests run against a separate `ai_travel_planner_test` database that is c
 
 ## Deployment
 
-The app is three parts: a PostgreSQL database, the Express API and the static web app. One way to host it on free tiers:
+The live demo runs on Render (API and web app) with the database on Neon, described in `render.yaml`:
 
-1. **Database (Neon).** Create a project and copy the connection string (it includes `?sslmode=require`).
-2. **API (Render, Web Service).**
-   - Root directory: `backend`
-   - Build command: `npm ci`
-   - Start command: `npm run migrate && npm start`
-   - Environment: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN=7d`, `CLIENT_URL` (the web app's URL), `GROQ_API_KEY` and the optional API keys
-   - After the first deploy, create the demo travellers once by running `npm run seed` with `DATABASE_URL` set to the hosted database (from your machine, or the service shell where available). Re-run it to reset the demo.
-3. **Web app (Vercel).**
-   - Root directory: `web`, framework preset Vite (build `npm run build`, output `dist`)
-   - Environment: `VITE_API_URL=https://<your-api>.onrender.com/api`
-   - `web/vercel.json` rewrites all routes to `index.html` so deep links such as `/trips/42` load.
+1. **Database (Neon).** Create a project in AWS Frankfurt (to sit next to the Render region) and copy the connection string.
+2. **Render Blueprint.** New > Blueprint, pick the repository, and enter `DATABASE_URL`, `GROQ_API_KEY` and optionally `OPENWEATHER_API_KEY` when asked. Render generates `JWT_SECRET`.
+   - The API (`ai-travel-assistant-api`) runs migrations on every start, then `npm run seed:auto`, which creates the demo data when it is missing and refreshes it once it is a week old.
+   - The web app (`ai-travel-assistant`) is a static site with a rewrite so deep links such as `/trips/42` load.
+3. **Public URLs.** `CLIENT_URL` (API) and `VITE_API_URL` (web app) hold the two public URLs. Render may add a suffix to a service name, so set them to the URLs shown in the dashboard and redeploy the web app after changing `VITE_API_URL` (it is built in).
+
+Elsewhere: `web/vercel.json` provides the same rewrite on Vercel, and the API runs on any Node 22 host with `DATABASE_URL` set.
 
 Free Render services sleep when idle, so the first request after a quiet period can take around a minute.
 
