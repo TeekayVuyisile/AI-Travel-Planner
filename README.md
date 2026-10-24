@@ -1,6 +1,7 @@
 # AI Travel Assistant
 
 [![CI](https://github.com/TeekayVuyisile/AI-Travel-Planner/actions/workflows/ci.yml/badge.svg)](https://github.com/TeekayVuyisile/AI-Travel-Planner/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A group trip planner that builds a day-by-day itinerary around the weather forecast, writes a packing list that explains every item, and keeps a shared budget that works out who owes whom.
 
@@ -149,6 +150,10 @@ web/
     pages/      routes
 docs/screenshots/
 ```
+
+## License
+
+[MIT](LICENSE)
 
 ## Author
 
