@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import AppShell from './components/layout/AppShell'
 import Spinner from './components/ui/Spinner'
+import ServerNotice from './components/ServerNotice'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -14,8 +15,9 @@ const NewTrip = lazy(() => import('./pages/NewTrip'))
 const TripOverview = lazy(() => import('./pages/TripOverview'))
 
 const FullPageSpinner = () => (
-  <div className="flex min-h-dvh items-center justify-center text-brand-700">
-    <Spinner className="size-8" />
+  <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4">
+    <Spinner className="size-8 text-brand-700" />
+    <ServerNotice className="w-full max-w-md" />
   </div>
 )
 

@@ -10,6 +10,7 @@ import Button from '../components/ui/Button'
 import Logo from '../components/ui/Logo'
 import { Avatar } from '../components/ui/Avatar'
 import ThemeSwitcher from '../components/ThemeSwitcher'
+import ServerNotice from '../components/ServerNotice'
 import { usePageTitle } from '../lib/usePageTitle'
 
 const features = [
@@ -151,6 +152,7 @@ const Landing = () => {
             </div>
             {demoError && <p role="alert" className="mt-4 text-sm text-rose-300">{demoError}</p>}
             <p className="mt-4 text-sm text-slate-400">No sign-up needed. You will join a sample group trip to Cape Town.</p>
+            <ServerNotice tone="inverse" className="mt-6 max-w-xl" />
           </div>
           <HeroPreview />
         </div>
