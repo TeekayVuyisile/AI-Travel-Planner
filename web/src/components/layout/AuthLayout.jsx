@@ -1,5 +1,6 @@
 import { LuCloudSun, LuUsers, LuWallet } from 'react-icons/lu'
 import Logo from '../ui/Logo'
+import ServerNotice from '../ServerNotice'
 
 const points = [
   { icon: LuCloudSun, text: 'Itineraries and packing lists that follow the forecast' },
@@ -14,6 +15,7 @@ const AuthLayout = ({ title, subtitle, children, footer }) => (
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-12">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
         {subtitle && <p className="mt-2 text-slate-600">{subtitle}</p>}
+        <ServerNotice className="mt-6" />
         <div className="mt-8">{children}</div>
         {footer && <div className="mt-8 text-sm text-slate-600">{footer}</div>}
       </div>
