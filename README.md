@@ -7,7 +7,13 @@ A group trip planner that builds a day-by-day itinerary around the weather forec
 
 **Live demo: [ai-travel-assistant-cp6l.onrender.com](https://ai-travel-assistant-cp6l.onrender.com)** - choose "Try the live demo"; no sign-up needed. It runs on free hosting, so the first load after a quiet period can take about a minute while the API wakes up.
 
-![Landing page](docs/screenshots/landing.jpg)
+## Demo video
+
+No time to try it? This captioned walkthrough (under 2 minutes, no sound) shows the main flow: planning a trip with AI, editing and voting on the itinerary, the map, packing list, trip assistant, shared budget and dark mode.
+
+[![Watch the demo video](docs/demo/demo-poster.jpg)](docs/demo/ai-travel-assistant-demo.mp4)
+
+[Watch the demo video (MP4, 11 MB)](docs/demo/ai-travel-assistant-demo.mp4)
 
 ## Features
 
@@ -148,7 +154,9 @@ web/
     contexts/   auth and toasts
     lib/        API client, formatting, theme, trip helpers
     pages/      routes
-docs/screenshots/
+docs/
+  demo/         demo video and its poster
+  screenshots/  README screenshots
 ```
 
 ## License
